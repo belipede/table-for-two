@@ -195,13 +195,13 @@ a { color: inherit; }
 
 
 /* Singapore map */
-.sgmap { position: relative; isolation: isolate; z-index: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); background: #d6e7ea; }
-.sgmap-canvas { height: min(72vh, 720px); min-height: 420px; width: 100%; background: #d6e7ea; font-family: var(--sans); }
+.sgmap { position: relative; isolation: isolate; z-index: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); background: #cfe6ec; }
+.sgmap-canvas { height: min(72vh, 720px); min-height: 420px; width: 100%; background: #cfe6ec; font-family: var(--sans); }
 .picker-map { position: relative; isolation: isolate; z-index: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
 .picker-map .sgmap-canvas { height: 52vh; min-height: 300px; }
 .modal.picker { max-width: 720px; }
 .overlay.top { z-index: 80; }
-.sgmap-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-weight: 600; background: #d6e7ea; z-index: 500; }
+.sgmap-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-weight: 600; background: #cfe6ec; z-index: 500; }
 .sgmap-ctl { position: absolute; top: 12px; right: 12px; z-index: 600; display: flex; flex-direction: column; gap: 6px; }
 .sgmap-ctl button { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font-size: 18px; font-weight: 700; box-shadow: var(--shadow); color: var(--ink); }
 .sgmap-ctl button:last-child { color: var(--b); }
@@ -215,7 +215,7 @@ a { color: inherit; }
 
 /* labels */
 .lbl-area, .lbl-stn { pointer-events: none !important; }
-.lbl-area span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #b19a8b; font-weight: 700; text-shadow: 0 0 3px #fdf6ee, 0 0 3px #fdf6ee; display: none; }
+.lbl-area span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #d1a99a; font-weight: 700; text-shadow: 0 0 3px #fff7ef, 0 0 3px #fff7ef; display: none; }
 .zl-12 .lbl-area span, .zl-13 .lbl-area span { display: block; }
 .zl-13 .lbl-area span { font-size: 11px; }
 .lbl-stn span { position: absolute; left: 7px; top: -8px; white-space: nowrap; font-size: 11px; font-weight: 600; color: #5d4b43; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; display: none; align-items: center; gap: 2px; }

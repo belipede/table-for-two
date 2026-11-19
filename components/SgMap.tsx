@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { createBaseMap, escapeHtml } from "@/lib/basemap";
-import { STATION_BY_NAME, codeColor } from "@/lib/stations";
+import { STATION_BY_NAME } from "@/lib/stations";
 import { PRICE, avgScore, type Partner, type Spot } from "@/lib/types";
 
 /** Where a spot sits on the map: its own pin, else near its MRT station. */
@@ -148,11 +148,7 @@ export default function SgMap({
           </div>
           <h3>{selSpot.name}</h3>
           <p className="meta">
-            {station && (
-              <span className="codes">
-                {station.k.map((k) => <i key={k} style={{ background: codeColor(k) }}>{k}</i>)} {station.n} ·{" "}
-              </span>
-            )}
+            {station && <>🚇 {station.n} · </>}
             {PRICE[selSpot.price - 1]}
             {selSpot.cuisine.length ? ` · ${selSpot.cuisine.join(", ")}` : ""} · added by {names[selSpot.addedBy]}
           </p>
