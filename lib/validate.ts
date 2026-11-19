@@ -1,3 +1,4 @@
+import { cleanAvatar, DEFAULT_AVATARS } from "./avatar";
 import type { Partner, Settings, Spot } from "./types";
 import { STATION_BY_NAME, inSg } from "./stations";
 
@@ -56,5 +57,9 @@ export function cleanSettings(body: any): Settings {
     typeof v === "string" && v.trim() ? v.trim().slice(0, 30) : d;
   const since =
     typeof body?.since === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.since) ? body.since : undefined;
-  return { names: { a: name(body?.names?.a, "Ben"), b: name(body?.names?.b, "Ris") }, ...(since ? { since } : {}) };
+  const avatars = {
+    a: cleanAvatar(body?.avatars?.a, DEFAULT_AVATARS.a),
+    b: cleanAvatar(body?.avatars?.b, DEFAULT_AVATARS.b),
+  };
+  return { names: { a: name(body?.names?.a, "Ben"), b: name(body?.names?.b, "Ris") }, ...(since ? { since } : {}), avatars };
 }

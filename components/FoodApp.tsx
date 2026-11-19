@@ -4,6 +4,8 @@ import { api } from "@/lib/api";
 import { AREAS, PRICE, avgScore, type Partner, type Settings, type Spot } from "@/lib/types";
 import SpotForm from "./SpotForm";
 import SgMap from "./SgMap";
+import AvatarEditor from "./AvatarEditor";
+import { DEFAULT_AVATARS } from "@/lib/avatar";
 
 type Tab = "all" | "visited" | "wishlist" | "ours";
 type Sort = "newest" | "top" | "recent" | "debate";
@@ -267,7 +269,7 @@ export default function FoodApp({
       </div>
 
       {view === "map" ? (
-        <SgMap spots={shown} names={names} onOpen={(s) => setEditing({ spot: s })} />
+        <SgMap spots={shown} names={names} avatars={settings.avatars ?? DEFAULT_AVATARS} onDressUp={() => setShowSettings(true)} onOpen={(s) => setEditing({ spot: s })} />
       ) : shown.length === 0 ? (
         <div className="empty">
           <div className="empty-emoji">{spots.length ? "🔍" : "🥢"}</div>
@@ -486,6 +488,7 @@ function SettingsModal({
   const [a, setA] = useState(settings.names.a);
   const [b, setB] = useState(settings.names.b);
   const [since, setSince] = useState(settings.since ?? "");
+  const [avs, setAvs] = useState(settings.avatars ?? DEFAULT_AVATARS);
   return (
     <div className="overlay" onClick={onClose}>
       <form
@@ -493,7 +496,7 @@ function SettingsModal({
         onClick={(e) => e.stopPropagation()}
         onSubmit={(e) => {
           e.preventDefault();
-          onSave({ names: { a, b }, since: since || undefined });
+          onSave({ names: { a, b }, since: since || undefined, avatars: avs });
         }}
       >
         <h2>About us</h2>
@@ -509,6 +512,9 @@ function SettingsModal({
           Together since (optional)
           <input type="date" value={since} onChange={(e) => setSince(e.target.value)} />
         </label>
+        <h3 className="av-title">Our little avatars</h3>
+        <AvatarEditor name={a} av={avs.a} onChange={(v) => setAvs({ ...avs, a: v })} />
+        <AvatarEditor name={b} av={avs.b} onChange={(v) => setAvs({ ...avs, b: v })} />
         <div className="form-actions">
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
           <button className="btn primary">Save</button>

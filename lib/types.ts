@@ -27,6 +27,7 @@ export interface Spot {
 export interface Settings {
   names: Record<Partner, string>;
   since?: string; // yyyy-mm-dd, together since
+  avatars?: Record<Partner, import("./avatar").Avatar>;
 }
 
 export const AREAS = ["Central", "North", "Northeast", "East", "West", "Overseas"];

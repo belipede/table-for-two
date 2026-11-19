@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { createBaseMap, escapeHtml } from "@/lib/basemap";
+import { avatarSvg, type Avatar } from "@/lib/avatar";
 import { STATION_BY_NAME } from "@/lib/stations";
 import { PRICE, avgScore, type Partner, type Spot } from "@/lib/types";
 
@@ -16,15 +17,25 @@ export function spotPosition(s: Spot, nthAtStation = 0): { ll: [number, number];
   return { ll: [st.ll[0] + Math.sin(a) * r, st.ll[1] + Math.cos(a) * r], exact: false };
 }
 
+const LINES = ["hungry? 🍜", "what's for dinner? 🤔", "supper later? 🌙", "bubble tea run? 🧋", "i'm starving 😩", "your pick tonight 💕"];
+const ARRIVE = ["ooh this one! 😋", "let's go here 💕", "yum yum 🤤", "date night? ✨", "can we go? 🥺"];
+
 export default function SgMap({
   spots,
   names,
+  avatars,
   onOpen,
+  onDressUp,
 }: {
   spots: Spot[];
   names: Record<Partner, string>;
+  avatars: Record<Partner, Avatar>;
   onOpen: (s: Spot) => void;
+  onDressUp?: () => void;
 }) {
+  const coupleRef = useRef<Leaflet.Marker | null>(null);
+  const walkRef = useRef<number | null>(null);
+  const [say, setSay] = useState<string | null>(null);
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const LRef = useRef<typeof Leaflet | null>(null);
@@ -45,6 +56,14 @@ export default function SgMap({
   }, [spots]);
   const unplaced = spots.length - placed.length;
 
+  // the two of us hang out at the last place we ate together
+  const home = useMemo<[number, number]>(() => {
+    const v = placed
+      .filter((p) => p.s.status === "visited")
+      .sort((x, y) => (y.s.visitedOn ?? "").localeCompare(x.s.visitedOn ?? "") || y.s.updatedAt - x.s.updatedAt)[0];
+    return v ? v.ll : [1.2868, 103.8545];
+  }, [placed]);
+
   // build the map once
   useEffect(() => {
     let cancelled = false;
@@ -64,8 +83,10 @@ export default function SgMap({
     })();
     return () => {
       cancelled = true;
+      if (walkRef.current) cancelAnimationFrame(walkRef.current);
       mapRef.current?.remove();
       mapRef.current = null;
+      coupleRef.current = null;
     };
   }, []);
 
@@ -102,6 +123,72 @@ export default function SgMap({
       fitAll();
     }
   }, [ready, placed, selected]);
+
+  // us two, as a marker that can walk around
+  useEffect(() => {
+    const L = LRef.current, map = mapRef.current;
+    if (!ready || !L || !map) return;
+    const html = `<div class="couple">
+        <div class="couple-say"></div>
+        <div class="couple-heart">♥</div>
+        <div class="couple-pair">
+          <div class="buddy a"><span class="buddy-name">${escapeHtml(names.a)}</span>${avatarSvg(avatars.a, { size: 40 })}</div>
+          <div class="buddy b"><span class="buddy-name">${escapeHtml(names.b)}</span>${avatarSvg(avatars.b, { size: 40 })}</div>
+        </div>
+      </div>`;
+    const icon = L.divIcon({ className: "couple-wrap", html, iconSize: [0, 0] });
+    if (coupleRef.current) coupleRef.current.setIcon(icon);
+    else {
+      const m = L.marker(home, { icon, zIndexOffset: 2000, keyboard: false, title: `${names.a} & ${names.b}` }).addTo(map);
+      m.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
+        setSay(LINES[Math.floor(Math.random() * LINES.length)]);
+      });
+      coupleRef.current = m;
+    }
+  }, [ready, avatars, names]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // walk home when nothing is selected, or over to the chosen spot
+  useEffect(() => {
+    const target = placed.find((p) => p.s.id === selected)?.ll ?? home;
+    walkTo(target);
+  }, [selected, home]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // speech bubble
+  useEffect(() => {
+    const el = coupleRef.current?.getElement()?.querySelector(".couple-say") as HTMLElement | null;
+    if (!el) return;
+    el.textContent = say ?? "";
+    el.classList.toggle("on", !!say);
+    if (!say) return;
+    const t = setTimeout(() => setSay(null), 2600);
+    return () => clearTimeout(t);
+  }, [say]);
+
+  function walkTo(to: [number, number]) {
+    const m = coupleRef.current, map = mapRef.current;
+    if (!m || !map) return;
+    if (walkRef.current) cancelAnimationFrame(walkRef.current);
+    const from = m.getLatLng();
+    const dist = map.distance(from, to);
+    if (dist < 1) return;
+    // stand just beside the pin rather than on top of it
+    const off = to; // CSS keeps us standing just left of the pin
+    const el = m.getElement();
+    el?.classList.add("walking");
+    const dur = Math.min(1600, 500 + dist / 8), t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      m.setLatLng([from.lat + (off[0] - from.lat) * e, from.lng + (off[1] - from.lng) * e]);
+      if (k < 1) walkRef.current = requestAnimationFrame(step);
+      else {
+        walkRef.current = null;
+        m.getElement()?.classList.remove("walking");
+        if (selected) setSay(ARRIVE[Math.floor(Math.random() * ARRIVE.length)]);
+      }
+    };
+    walkRef.current = requestAnimationFrame(step);
+  }
 
   function fitAll() {
     const L = LRef.current, map = mapRef.current;
@@ -140,6 +227,12 @@ export default function SgMap({
           <span className="fab-label">Show all</span>
           <span className="fab-icon" style={{ color: "var(--b)" }}>♥</span>
         </button>
+        {onDressUp && (
+          <button className="fab" onClick={onDressUp} title="Change how we look">
+            <span className="fab-label">Dress us up</span>
+            <span className="fab-icon">👕</span>
+          </button>
+        )}
         <button className="fab" onClick={() => mapRef.current?.zoomIn()} aria-label="zoom in">
           <span className="fab-icon">+</span>
         </button>
