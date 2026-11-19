@@ -48,6 +48,14 @@ export default function SpotForm({
   const [picking, setPicking] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [dish, setDish] = useState("");
+  const orders = s.orders ?? [];
+  const addDish = () => {
+    const d = dish.trim().slice(0, 40);
+    if (!d || orders.length >= 12 || orders.some((o) => o.d.toLowerCase() === d.toLowerCase())) return setDish("");
+    setS((p) => ({ ...p, orders: [...(p.orders ?? []), { d }] }));
+    setDish("");
+  };
   const [confirmDel, setConfirmDel] = useState(false);
 
   const set = <K extends keyof Spot>(k: K, v: Spot[K]) => setS((p) => ({ ...p, [k]: v }));
@@ -184,14 +192,14 @@ export default function SpotForm({
           </datalist>
         </label>
 
-        <label>
-          Must-order dishes
+        {(!visited || s.dishes) && <label>
+          {visited ? "Must-order dishes" : "Dishes we want to try"}
           <input
             value={s.dishes ?? ""}
             onChange={(e) => set("dishes", e.target.value)}
             placeholder="mentaiko udon, the matcha soft serve"
           />
-        </label>
+        </label>}
 
         <label>
           Google Maps link
@@ -225,10 +233,46 @@ export default function SpotForm({
 
         {visited && (
           <>
-            <label>
-              When did we go?
-              <input type="date" value={s.visitedOn ?? ""} onChange={(e) => set("visitedOn", e.target.value)} />
-            </label>
+            <div className="visit-row">
+              <label>
+                Last time we went
+                <input type="date" value={s.visitedOn ?? ""} onChange={(e) => set("visitedOn", e.target.value)} />
+              </label>
+              <div className="visits">
+                <span className="lbl">Times we've been</span>
+                <div className="stepper">
+                  <button type="button" onClick={() => set("visits", Math.max(1, (s.visits ?? 1) - 1))} aria-label="one less">−</button>
+                  <b>{s.visits ?? 1}</b>
+                  <button type="button" onClick={() => set("visits", Math.min(999, (s.visits ?? 1) + 1))} aria-label="one more">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="orders-edit">
+              <span className="lbl">What we order <small>tap ★ for the ones to get again</small></span>
+              {orders.length > 0 && (
+                <div className="order-chips">
+                  {orders.map((o, i) => (
+                    <span key={o.d} className={`order-chip ${o.fav ? "fav" : ""}`}>
+                      <button type="button" className="star" aria-label={o.fav ? "unstar" : "star"}
+                        onClick={() => set("orders", orders.map((x, j) => (j === i ? { ...x, fav: !x.fav || undefined } : x)))}>
+                        {o.fav ? "★" : "☆"}
+                      </button>
+                      {o.d}
+                      <button type="button" className="rm" aria-label={`remove ${o.d}`} onClick={() => set("orders", orders.filter((_, j) => j !== i))}>×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {orders.length < 12 && (
+                <div className="order-add">
+                  <input value={dish} maxLength={40} placeholder="e.g. mentaiko udon"
+                    onChange={(e) => setDish(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDish(); } }} />
+                  <button type="button" className="btn ghost small" onClick={addDish} disabled={!dish.trim()}>Add</button>
+                </div>
+              )}
+            </div>
 
             <div className="rate-grid">
               {order.map((p) => (

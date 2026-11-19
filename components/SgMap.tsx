@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { createBaseMap, escapeHtml } from "@/lib/basemap";
 import { avatarSvg, type Avatar } from "@/lib/avatar";
+import OrderChips from "./OrderChips";
 import { STATION_BY_NAME } from "@/lib/stations";
 import { PRICE, avgScore, type Partner, type Spot } from "@/lib/types";
 
@@ -263,9 +264,11 @@ export default function SgMap({
           <h3>{selSpot.name}</h3>
           <p className="meta">
             {station && <>🚇 {station.n} · </>}
+            {selSpot.status === "visited" && <>been {selSpot.visits ?? 1}× · </>}
             {PRICE[selSpot.price - 1]}
             {selSpot.cuisine.length ? ` · ${selSpot.cuisine.join(", ")}` : ""} · added by {names[selSpot.addedBy]}
           </p>
+          {!!selSpot.orders?.length && <OrderChips orders={selSpot.orders} max={4} />}
           {selSpot.dishes && <p className="dishes"><b>Must order:</b> {selSpot.dishes}</p>}
           {selSpot.memory && <p className="memory">💌 {selSpot.memory}</p>}
           {!sel?.exact && <p className="hint">📍 Shown near {selSpot.mrt} MRT. Open it to pin the exact spot.</p>}

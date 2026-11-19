@@ -49,6 +49,13 @@ export function cleanSpot(input: any, prev?: Spot): Spot | string {
     visitedOn: str(input?.visitedOn, 10),
     memory: str(input?.memory, 2000),
     ourSpot: input?.ourSpot === true || undefined,
+    visits: input?.status === "visited" ? Math.max(1, Math.round(num(input?.visits, 0, 999) ?? 1)) : undefined,
+    orders: Array.isArray(input?.orders)
+      ? input.orders
+          .map((o: any) => ({ d: str(o?.d, 40), ...(o?.fav === true ? { fav: true } : {}) }))
+          .filter((o: { d?: string }) => o.d)
+          .slice(0, 12)
+      : undefined,
   };
 }
 

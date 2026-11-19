@@ -22,6 +22,13 @@ export interface Spot {
   visitedOn?: string; // yyyy-mm-dd
   memory?: string; // date memory
   ourSpot?: boolean; // a forever favourite
+  visits?: number; // how many times we've been
+  orders?: Order[]; // what we usually get
+}
+
+export interface Order {
+  d: string; // the dish
+  fav?: boolean; // get this again
 }
 
 export interface Settings {

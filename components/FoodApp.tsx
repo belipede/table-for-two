@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { AREAS, PRICE, avgScore, type Partner, type Settings, type Spot } from "@/lib/types";
 import SpotForm from "./SpotForm";
 import SgMap from "./SgMap";
+import OrderChips from "./OrderChips";
 import AvatarEditor from "./AvatarEditor";
 import { DEFAULT_AVATARS } from "@/lib/avatar";
 
@@ -131,6 +132,11 @@ export default function FoodApp({
     await api().deleteSpot(id);
     setSpots((prev) => prev.filter((s) => s.id !== id));
     setEditing(null);
+  }
+
+  async function addVisit(s: Spot) {
+    const today = new Date().toISOString().slice(0, 10);
+    await api().saveSpot({ ...s, visits: (s.visits ?? 1) + 1, visitedOn: today }).catch(() => {});
   }
 
   async function toggleWant(s: Spot) {
@@ -295,6 +301,7 @@ export default function FoodApp({
               onOpen={() => setEditing({ spot: s })}
               onWent={() => setEditing({ spot: s, markVisited: true })}
               onWant={() => toggleWant(s)}
+              onVisit={() => addVisit(s)}
             />
           ))}
         </section>
@@ -384,12 +391,14 @@ function Card({
   onOpen,
   onWent,
   onWant,
+  onVisit,
 }: {
   s: Spot;
   me: Partner;
   names: Record<Partner, string>;
   onOpen: () => void;
   onWent: () => void;
+  onVisit: () => void;
   onWant: () => void;
 }) {
   const score = avgScore(s);
@@ -412,7 +421,8 @@ function Card({
       <h3>{s.name}</h3>
       <p className="meta">
         {s.mrt ? `🚇 ${s.mrt}` : s.area} · {PRICE[s.price - 1]}
-        {s.visitedOn && visited && ` · ${new Date(s.visitedOn).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}`}
+        {visited && ` · been ${s.visits ?? 1}×`}
+        {s.visitedOn && visited && ` · last ${new Date(s.visitedOn).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}`}
       </p>
       {s.cuisine.length > 0 && (
         <div className="chips">
@@ -433,6 +443,7 @@ function Card({
         </div>
       )}
 
+      {!!s.orders?.length && <OrderChips orders={s.orders} />}
       {s.dishes && (
         <p className="dishes">
           <b>Must order:</b> {s.dishes}
@@ -465,6 +476,11 @@ function Card({
             </button>
             <button className="went" onClick={onWent}>We went! →</button>
           </div>
+        )}
+        {visited && (
+          <button className="want visit-btn" onClick={(e) => { e.stopPropagation(); onVisit(); }} title="We went again today">
+            +1 visit
+          </button>
         )}
         {s.mapsUrl && visited && (
           <a href={s.mapsUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="map">
