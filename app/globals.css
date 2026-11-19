@@ -329,7 +329,7 @@ a { color: inherit; }
 
 /* ---- Us two, walking around the map ---- */
 .couple-wrap { background: none; border: none; }
-.couple { position: absolute; right: 16px; bottom: -16px; width: 84px; display: flex; flex-direction: column; align-items: center; cursor: pointer; font-family: var(--toy); pointer-events: auto; }
+.couple { position: absolute; right: 16px; bottom: -16px; width: max-content; min-width: 84px; display: flex; flex-direction: column; align-items: center; cursor: pointer; font-family: var(--toy); pointer-events: auto; }
 .couple-pair { display: flex; align-items: flex-end; gap: 0; }
 .buddy { position: relative; display: flex; flex-direction: column; align-items: center; animation: buddy-bob 1.8s ease-in-out infinite; transform-origin: 50% 100%; }
 .buddy.b { animation-delay: -0.9s; margin-left: -6px; }
@@ -361,3 +361,22 @@ a { color: inherit; }
 .chip-btn { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 2px 9px; font-size: 12px; cursor: pointer; font-family: inherit; color: inherit; }
 .chip-btn.emo { padding: 2px 6px; font-size: 14px; }
 .chip-btn.on { border-color: var(--a); background: var(--a); color: #fff; }
+
+/* ---- 3D camera tilt (gets steeper as you zoom in) ---- */
+.sgmap:has(.tilt) { perspective: 1000px; perspective-origin: 50% 35%; background: linear-gradient(#bfe9ff, #e8f8ff 40%, #9fdcef 70%); --fog: 0; }
+.sgmap-canvas.tilt { overflow: visible; transform-origin: 50% 55%; }
+.tilt .leaflet-control-container { display: none; }
+/* markers live in a flat overlay above the tilted ground, so they stand upright */
+.tilt-overlay { position: absolute; inset: 0; z-index: 450; pointer-events: none; background: none !important; overflow: hidden; }
+.tilt-overlay .leaflet-marker-pane { position: absolute; left: 0; top: 0; }
+.tilt-overlay .leaflet-interactive { pointer-events: auto; }
+.tilt-overlay.zooming .leaflet-zoom-animated { transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1); }
+/* pins sit on the ground by their base instead of their middle */
+.tilt-overlay .pin2 { transform: translate(-50%, -100%); }
+.tilt-overlay .pin2.sel::before { top: calc(100% - 6px); }
+.tilt-overlay .couple { bottom: -2px; }
+.sgmap-fog { position: absolute; left: 0; right: 0; top: 0; height: 34%; pointer-events: none; z-index: 500; opacity: var(--fog, 0); transition: opacity 0.35s;
+  background: linear-gradient(#e6f7ff 0%, rgba(230, 247, 255, 0.85) 30%, rgba(230, 247, 255, 0) 100%); }
+.sgmap-fog::before { content: "☁️"; position: absolute; left: 14%; top: 8%; font-size: 28px; opacity: .9; animation: drift 18s linear infinite alternate; }
+.sgmap-fog::after { content: "☁️"; position: absolute; right: 18%; top: 18%; font-size: 20px; opacity: .8; animation: drift 24s linear infinite alternate-reverse; }
+@keyframes drift { from { transform: translateX(-20px); } to { transform: translateX(30px); } }

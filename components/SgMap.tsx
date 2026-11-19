@@ -71,7 +71,7 @@ export default function SgMap({
       const L = (await import("leaflet")).default ?? (await import("leaflet"));
       if (cancelled || !el.current) return;
       LRef.current = L as typeof Leaflet;
-      const map = await createBaseMap(L as typeof Leaflet, el.current);
+      const map = await createBaseMap(L as typeof Leaflet, el.current, { tilt: true });
       if (cancelled) {
         map.remove();
         return;
@@ -195,7 +195,7 @@ export default function SgMap({
     if (!L || !map) return;
     if (!placed.length) return map.setView([1.3521, 103.8198], 12);
     if (placed.length === 1) return map.setView(placed[0].ll, 15);
-    map.fitBounds(L.latLngBounds(placed.map((p) => p.ll)), { padding: [50, 50], maxZoom: 15 });
+    map.fitBounds(L.latLngBounds(placed.map((p) => p.ll)), { paddingTopLeft: [50, 130], paddingBottomRight: [70, 50], maxZoom: 14.5 });
   }
 
   function surprise() {
@@ -216,6 +216,7 @@ export default function SgMap({
   return (
     <div className={`sgmap ${selected ? "has-card" : ""}`}>
       <div ref={el} className="sgmap-canvas" />
+      <div className="sgmap-fog" aria-hidden="true" />
       {!ready && <div className="sgmap-loading">Unfolding the map… 🗺️</div>}
 
       <div className="sgmap-fabs">
