@@ -98,7 +98,7 @@ export default function SgMap({
     for (const { s, ll } of placed) {
       const visited = s.status === "visited";
       const html = `<div class="pin2 ${visited ? "v" : "w"} ${s.ourSpot ? "ours" : ""} ${selected === s.id ? "sel" : ""}">
-          <div class="pin2-dot">${visited ? "♥" : "★"}</div>
+          <div class="pin2-dot"></div>
           <div class="pin2-name">${escapeHtml(s.name)}</div>
         </div>`;
       const m = L.marker(ll, {
@@ -222,16 +222,16 @@ export default function SgMap({
       <div className="sgmap-fabs">
         <button className="fab" onClick={surprise} title="Pick somewhere from our wishlist">
           <span className="fab-label">Surprise us</span>
-          <span className="fab-icon">🎲</span>
+          <span className="fab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1" fill="currentColor" /><circle cx="15" cy="15" r="1" fill="currentColor" /><circle cx="15" cy="9" r="1" fill="currentColor" /><circle cx="9" cy="15" r="1" fill="currentColor" /></svg></span>
         </button>
         <button className="fab" onClick={() => { setSelected(null); fitAll(); }} title="Show all our spots">
           <span className="fab-label">Show all</span>
-          <span className="fab-icon" style={{ color: "var(--b)" }}>♥</span>
+          <span className="fab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg></span>
         </button>
         {onDressUp && (
           <button className="fab" onClick={onDressUp} title="Change how we look">
             <span className="fab-label">Dress us up</span>
-            <span className="fab-icon">👕</span>
+            <span className="fab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3a4 4 0 0 1-8 0z" /></svg></span>
           </button>
         )}
         <button className="fab" onClick={() => mapRef.current?.zoomIn()} aria-label="zoom in">
