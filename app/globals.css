@@ -195,46 +195,57 @@ a { color: inherit; }
 
 
 /* Singapore map */
-.sgmap { position: relative; isolation: isolate; z-index: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); background: #cfe6ec; }
-.sgmap-canvas { height: min(72vh, 720px); min-height: 420px; width: 100%; background: #cfe6ec; font-family: var(--sans); }
+.sgmap { position: relative; isolation: isolate; z-index: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); background: #dbe7e4; }
+.sgmap-canvas { height: min(72vh, 720px); min-height: 420px; width: 100%; background: #dbe7e4; font-family: var(--sans); }
 .picker-map { position: relative; isolation: isolate; z-index: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
 .picker-map .sgmap-canvas { height: 52vh; min-height: 300px; }
 .modal.picker { max-width: 720px; }
 .overlay.top { z-index: 80; }
-.sgmap-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-weight: 600; background: #cfe6ec; z-index: 500; }
+.sgmap-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-weight: 600; background: #dbe7e4; z-index: 500; }
 .sgmap-ctl { position: absolute; top: 12px; right: 12px; z-index: 600; display: flex; flex-direction: column; gap: 6px; }
 .sgmap-ctl button { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font-size: 18px; font-weight: 700; box-shadow: var(--shadow); color: var(--ink); }
 .sgmap-ctl button:last-child { color: var(--b); }
 .sgmap-legend { position: absolute; left: 12px; top: 12px; z-index: 600; background: rgba(255, 250, 244, 0.92); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; max-width: calc(100% - 80px); box-shadow: var(--shadow); }
 .sgmap-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; margin-right: 3px; }
 .sgmap-legend .dot.v { background: var(--b); }
-.sgmap-legend .dot.w { background: var(--gold); }
+.sgmap-legend .dot.w { background: #fffaf2; border: 2px solid var(--gold); width: 9px; height: 9px; }
 .sgmap-legend .muted { color: var(--muted); }
 .leaflet-container { font-family: var(--sans); }
 .leaflet-control-attribution { font-size: 9px; background: rgba(255, 250, 244, 0.8) !important; color: var(--muted); }
 
 /* labels */
 .lbl-area, .lbl-stn { pointer-events: none !important; }
-.lbl-area span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #d1a99a; font-weight: 700; text-shadow: 0 0 3px #fff7ef, 0 0 3px #fff7ef; display: none; }
-.zl-12 .lbl-area span, .zl-13 .lbl-area span { display: block; }
-.zl-13 .lbl-area span { font-size: 11px; }
+.lbl-area span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #b9a898; font-weight: 600; text-shadow: 0 0 3px #f6eee3, 0 0 3px #f6eee3, 0 0 3px #f6eee3; display: none; }
+.zl-11 .lbl-area span, .zl-12 .lbl-area span { display: block; }
 .lbl-stn span { position: absolute; left: 7px; top: -8px; white-space: nowrap; font-size: 11px; font-weight: 600; color: #5d4b43; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; display: none; align-items: center; gap: 2px; }
 .lbl-stn i { font-style: normal; color: #fff; font-size: 8.5px; font-weight: 800; padding: 1px 3px; border-radius: 3px; text-shadow: none; }
 .zl-14 .lbl-stn span, .zl-15 .lbl-stn span, .zl-16 .lbl-stn span, .zl-17 .lbl-stn span, .zl-18 .lbl-stn span { display: flex; }
 
-/* spot pins */
+/* spot pins: small and quiet; the name shows on hover or when picked */
 .pin2-wrap { background: none; border: none; }
-.pin2 { position: absolute; transform: translate(-50%, calc(-100% - 8px)); display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-.pin2-dot { min-width: 30px; height: 30px; padding: 0 6px; border-radius: 999px; position: relative; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 12px; border: 2.5px solid #fff; box-shadow: 0 3px 8px rgba(58, 42, 37, 0.35); transition: transform 0.15s; }
-.pin2-dot::after { content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid #fff; border-bottom: 0; }
+.pin2 { position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px; cursor: pointer; }
+.pin2-dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; line-height: 1; color: #fff; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(58, 42, 37, 0.28); transition: transform 0.15s ease-out; position: relative; }
+.pin2:hover .pin2-dot { transform: scale(1.15); }
 .pin2.v .pin2-dot { background: var(--b); }
-.pin2.w .pin2-dot { background: var(--gold); }
+.pin2.w .pin2-dot { background: #fffaf2; border: 2.5px solid var(--gold); color: var(--gold); }
 .pin2.ours .pin2-dot { background: linear-gradient(135deg, var(--a), var(--b)); }
-.pin2.pick .pin2-dot { background: var(--a); font-size: 14px; }
-.pin2.sel .pin2-dot { transform: scale(1.25); box-shadow: 0 0 0 4px rgba(207, 95, 147, 0.3), 0 4px 10px rgba(58, 42, 37, 0.4); }
-.pin2-name { position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 700; color: var(--ink); white-space: nowrap; box-shadow: 0 2px 6px rgba(58, 42, 37, 0.15); max-width: 160px; overflow: hidden; text-overflow: ellipsis; display: none; }
-.zl-14 .pin2-name, .zl-15 .pin2-name, .zl-16 .pin2-name, .zl-17 .pin2-name, .zl-18 .pin2-name, .pin2.sel .pin2-name { display: block; }
-.pin2:hover .pin2-name { display: block; }
+.pin2.pick { width: 30px; height: 30px; }
+.pin2.pick .pin2-dot { width: 30px; height: 30px; background: var(--a); font-size: 14px; }
+.pin2.sel .pin2-dot { transform: scale(1.3); }
+.pin2.sel::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; background: rgba(207, 95, 147, 0.2); animation: halo 1.6s ease-in-out infinite; }
+@keyframes halo { 50% { transform: scale(1.18); opacity: 0.6; } }
+.pin2-name { position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; box-shadow: 0 4px 12px rgba(58, 42, 37, 0.16); max-width: 200px; overflow: hidden; text-overflow: ellipsis; display: none; pointer-events: none; }
+.pin2:hover .pin2-name, .pin2.sel .pin2-name, .zl-16 .pin2-name, .zl-17 .pin2-name, .zl-18 .pin2-name { display: block; }
+
+/* floating buttons */
+.sgmap-fabs { position: absolute; right: 12px; bottom: 26px; z-index: 600; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.fab { display: inline-flex; align-items: center; gap: 8px; border: none; background: none; padding: 0; color: var(--ink); }
+.fab-label { font-size: 13px; font-weight: 700; white-space: nowrap; text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 6px var(--bg); }
+.fab-icon { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 6px 16px -6px rgba(58, 42, 37, 0.35); font-size: 18px; transition: transform 0.12s; }
+.fab:hover .fab-icon { transform: translateY(-1px); }
+.fab:active .fab-icon { transform: scale(0.95); }
+.sgmap.has-card .sgmap-fabs { display: none; }
+@media (max-width: 640px) { .fab-label { display: none; } }
 
 /* bottom card */
 .sgmap-card { position: absolute; left: 12px; right: 12px; bottom: 22px; z-index: 700; max-width: 420px; margin: 0 auto; background: var(--paper); border-radius: 18px; padding: 14px 16px; box-shadow: 0 18px 40px -12px rgba(58, 42, 37, 0.45); cursor: pointer; display: flex; flex-direction: column; gap: 5px; animation: pop 0.18s ease-out; }

@@ -32,12 +32,12 @@ function decoder(o: Packed["o"]) {
 const GREEN_AREAS = /water catchment|lim chu kang|mandai|simpang|western islands|north-eastern islands|southern islands|tengah/i;
 
 export const PALETTE = {
-  sea: "#cfe6ec",
-  land: "#fff7ef",
-  green: "#e3f0d6",
-  areaLine: "#f0d9c8",
-  road: "#ffffff",
-  roadCasing: "#f3dfcf",
+  sea: "#dbe7e4",
+  land: "#f6eee3",
+  green: "#e3ead3",
+  areaLine: "#ece0d2",
+  road: "#fffdf8",
+  roadCasing: "#ebdfd0",
 };
 
 export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveLabels?: boolean } = {}) {
@@ -64,7 +64,7 @@ export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveL
 
   // land
   Lf.polygon(data.land.map(dec), {
-    renderer: canvas, stroke: true, color: "#f1cfc0", weight: 2.5, fillColor: PALETTE.land, fillOpacity: 1, interactive: false,
+    renderer: canvas, stroke: true, color: "#e9dccb", weight: 1, fillColor: PALETTE.land, fillOpacity: 1, interactive: false,
   }).addTo(map);
 
   // neighbourhoods
@@ -73,7 +73,7 @@ export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveL
     renderer: canvas, stroke: false, fillColor: PALETTE.green, fillOpacity: 1, interactive: false,
   }).addTo(map);
   Lf.polyline(data.areas.flatMap((a) => a.r.map(dec)), {
-    renderer: canvas, color: PALETTE.areaLine, weight: 1, dashArray: "4 4", interactive: false,
+    renderer: canvas, color: PALETTE.areaLine, weight: 0.8, dashArray: "2 5", interactive: false,
   }).addTo(map);
 
   // roads (bus network): casing + fill
@@ -92,9 +92,9 @@ export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveL
 
   const restyle = () => {
     const z = map.getZoom();
-    const w = z < 12 ? 0.5 : z < 13 ? 0.9 : z < 14 ? 1.6 : z < 15 ? 2.6 : z < 16 ? 4 : 6;
+    const w = z < 12 ? 0.7 : z < 13 ? 1.2 : z < 14 ? 2 : z < 15 ? 3.2 : z < 16 ? 5 : 7;
     road.setStyle({ weight: w });
-    casing.setStyle({ weight: w + (z >= 14 ? 1.6 : 0.8) });
+    casing.setStyle({ weight: w + (z >= 14 ? 1.4 : 0.6) });
     const c = el.classList;
     for (const k of [...c]) if (k.startsWith("zl-")) c.remove(k);
     c.add(`zl-${Math.floor(z)}`);

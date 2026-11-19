@@ -76,9 +76,8 @@ export default function SgMap({
     layer.clearLayers();
     for (const { s, ll } of placed) {
       const visited = s.status === "visited";
-      const score = avgScore(s);
       const html = `<div class="pin2 ${visited ? "v" : "w"} ${s.ourSpot ? "ours" : ""} ${selected === s.id ? "sel" : ""}">
-          <div class="pin2-dot">${visited ? (score != null ? score : "♥") : "★"}</div>
+          <div class="pin2-dot">${visited ? "♥" : "★"}</div>
           <div class="pin2-name">${escapeHtml(s.name)}</div>
         </div>`;
       const m = L.marker(ll, {
@@ -112,20 +111,41 @@ export default function SgMap({
     map.fitBounds(L.latLngBounds(placed.map((p) => p.ll)), { padding: [50, 50], maxZoom: 15 });
   }
 
+  function surprise() {
+    const map = mapRef.current;
+    if (!map || !placed.length) return;
+    const wish = placed.filter((p) => p.s.status === "wishlist");
+    const pool = (wish.length ? wish : placed).filter((p) => p.s.id !== selected);
+    const pick = (pool.length ? pool : placed)[Math.floor(Math.random() * (pool.length || placed.length))];
+    setSelected(pick.s.id);
+    map.flyTo(pick.ll, Math.max(map.getZoom(), 15), { duration: 0.9 });
+  }
+
   const sel = placed.find((p) => p.s.id === selected);
   const selSpot = sel?.s;
   const selScore = selSpot ? avgScore(selSpot) : null;
   const station = selSpot?.mrt ? STATION_BY_NAME[selSpot.mrt] : undefined;
 
   return (
-    <div className="sgmap">
+    <div className={`sgmap ${selected ? "has-card" : ""}`}>
       <div ref={el} className="sgmap-canvas" />
       {!ready && <div className="sgmap-loading">Unfolding the map… 🗺️</div>}
 
-      <div className="sgmap-ctl">
-        <button onClick={() => mapRef.current?.zoomIn()} aria-label="zoom in">+</button>
-        <button onClick={() => mapRef.current?.zoomOut()} aria-label="zoom out">−</button>
-        <button onClick={fitAll} aria-label="show all our spots" title="show all our spots">♥</button>
+      <div className="sgmap-fabs">
+        <button className="fab" onClick={surprise} title="Pick somewhere from our wishlist">
+          <span className="fab-label">Surprise us</span>
+          <span className="fab-icon">🎲</span>
+        </button>
+        <button className="fab" onClick={() => { setSelected(null); fitAll(); }} title="Show all our spots">
+          <span className="fab-label">Show all</span>
+          <span className="fab-icon" style={{ color: "var(--b)" }}>♥</span>
+        </button>
+        <button className="fab" onClick={() => mapRef.current?.zoomIn()} aria-label="zoom in">
+          <span className="fab-icon">+</span>
+        </button>
+        <button className="fab" onClick={() => mapRef.current?.zoomOut()} aria-label="zoom out">
+          <span className="fab-icon">−</span>
+        </button>
       </div>
 
       <div className="sgmap-legend">
