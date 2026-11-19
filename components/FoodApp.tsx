@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "@/lib/api";
 import { AREAS, PRICE, avgScore, type Partner, type Settings, type Spot } from "@/lib/types";
 import SpotForm from "./SpotForm";
 import MrtMap from "./MrtMap";
@@ -34,30 +35,25 @@ export default function FoodApp({
   const names = settings.names;
 
   useEffect(() => {
-    const saved = localStorage.getItem("t42_me");
-    if (saved === "a" || saved === "b") setMe(saved);
-    setMeLoaded(true);
-  }, []);
-
-  const refresh = useCallback(async () => {
-    const res = await fetch("/api/spots", { cache: "no-store" });
-    if (res.ok) setSpots(await res.json());
+    api()
+      .getMe()
+      .then((m) => m && setMe(m))
+      .finally(() => setMeLoaded(true));
   }, []);
 
   // keep in sync with whatever the other person adds
   useEffect(() => {
-    const t = setInterval(refresh, 20000);
-    const onFocus = () => refresh();
-    window.addEventListener("focus", onFocus);
+    const a = api().subscribeSpots(setSpots);
+    const b = api().subscribeSettings(setSettings);
     return () => {
-      clearInterval(t);
-      window.removeEventListener("focus", onFocus);
+      a();
+      b();
     };
-  }, [refresh]);
+  }, []);
 
   const pickMe = (p: Partner) => {
-    localStorage.setItem("t42_me", p);
     setMe(p);
+    api().setMe(p);
   };
 
   const cuisines = useMemo(
@@ -124,20 +120,13 @@ export default function FoodApp({
   }, [spots, tab, q, area, cuisine, by, sort]);
 
   async function save(data: Partial<Spot>) {
-    const isNew = !data.id;
-    const res = await fetch(isNew ? "/api/spots" : `/api/spots/${data.id}`, {
-      method: isNew ? "POST" : "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.error ?? "Couldn't save");
+    const body = await api().saveSpot(data);
     setSpots((prev) => [...prev.filter((s) => s.id !== body.id), body]);
     setEditing(null);
   }
 
   async function remove(id: string) {
-    await fetch(`/api/spots/${id}`, { method: "DELETE" });
+    await api().deleteSpot(id);
     setSpots((prev) => prev.filter((s) => s.id !== id));
     setEditing(null);
   }
@@ -146,11 +135,7 @@ export default function FoodApp({
     if (!me) return;
     const wants = { ...s.wants, [me]: !s.wants[me] };
     setSpots((prev) => prev.map((x) => (x.id === s.id ? { ...x, wants } : x)));
-    await fetch(`/api/spots/${s.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...s, wants }),
-    });
+    await api().saveSpot({ ...s, wants }).catch(() => {});
   }
 
   function spinTonight() {
@@ -369,12 +354,9 @@ export default function FoodApp({
           settings={settings}
           onClose={() => setShowSettings(false)}
           onSave={async (s) => {
-            const res = await fetch("/api/settings", {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(s),
-            });
-            if (res.ok) setSettings(await res.json());
+            try {
+              setSettings(await api().saveSettings(s));
+            } catch {}
             setShowSettings(false);
           }}
         />

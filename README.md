@@ -29,3 +29,8 @@ npm install
 npm run dev          # no database needed; saves to .data/db.json
 ```
 Set `APP_PASSCODE` to test the lock screen locally.
+
+## Claude-hosted version (no setup)
+`npm run build:page` bundles the same app into `dist/index.html`, which runs as a Claude artifact.
+There, data lives in the artifact's built-in shared database (live-syncing) instead of Redis, and
+access is controlled by who the artifact is shared with (partners need Editor access to add spots).

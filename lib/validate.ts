@@ -1,4 +1,4 @@
-import type { Partner, Spot } from "./types";
+import type { Partner, Settings, Spot } from "./types";
 import { STATIONS } from "./mrt";
 
 const str = (v: unknown, max = 2000) =>
@@ -46,4 +46,12 @@ export function cleanSpot(input: any, prev?: Spot): Spot | string {
     memory: str(input?.memory, 2000),
     ourSpot: input?.ourSpot === true || undefined,
   };
+}
+
+export function cleanSettings(body: any): Settings {
+  const name = (v: unknown, d: string) =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, 30) : d;
+  const since =
+    typeof body?.since === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.since) ? body.since : undefined;
+  return { names: { a: name(body?.names?.a, "Ben"), b: name(body?.names?.b, "Ris") }, ...(since ? { since } : {}) };
 }
