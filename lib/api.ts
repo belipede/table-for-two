@@ -1,5 +1,5 @@
 "use client";
-import type { Partner, Settings, Spot } from "./types";
+import type { Partner, Plan, Settings, Spot } from "./types";
 
 /** Data access used by the UI. The Next.js build talks to /api; the
  *  Claude-hosted build swaps in a realtime database (see artifact/main.tsx). */
@@ -11,6 +11,15 @@ export interface Api {
   saveSettings(s: Settings): Promise<Settings>;
   getMe(): Promise<Partner | null>;
   setMe(p: Partner): Promise<void>;
+  subscribePlans(cb: (plans: Plan[]) => void): () => void;
+  savePlan(p: Partial<Plan>): Promise<Plan>;
+  deletePlan(id: string): Promise<void>;
+  /** Photo storage; absent when this build or viewer can't upload. */
+  uploadPhoto?(blob: Blob): Promise<string>;
+  deletePhoto?(id: string): Promise<void>;
+  photoUrl(id: string): string;
+  /** Offer a generated file (e.g. a calendar invite); absent when not allowed. */
+  saveFile?(filename: string, data: string): Promise<void>;
 }
 
 const ls = {
@@ -68,6 +77,25 @@ export const httpApi: Api = {
   async setMe(p) {
     ls.set("t42_me", p);
   },
+  // plans live on this device only in the self-hosted build
+  subscribePlans(cb) {
+    try { cb(JSON.parse(ls.get("t42_plans") ?? "[]")); } catch { cb([]); }
+    return () => {};
+  },
+  async savePlan(p) {
+    const { cleanPlan } = await import("./validate");
+    const all: Plan[] = JSON.parse(ls.get("t42_plans") ?? "[]");
+    const prev = all.find((x) => x.id === p.id);
+    const plan = cleanPlan(p, prev);
+    if (typeof plan === "string") throw new Error(plan);
+    ls.set("t42_plans", JSON.stringify([...all.filter((x) => x.id !== plan.id), plan]));
+    return plan;
+  },
+  async deletePlan(id) {
+    const all: Plan[] = JSON.parse(ls.get("t42_plans") ?? "[]");
+    ls.set("t42_plans", JSON.stringify(all.filter((x) => x.id !== id)));
+  },
+  photoUrl: (id) => id,
 };
 
 let current: Api = httpApi;

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { AREAS, PRICE, type Partner, type Spot } from "@/lib/types";
 import { STATION_BY_NAME, STATION_NAMES, coordsFromMapsUrl } from "@/lib/stations";
 import LocationPicker from "./LocationPicker";
+import { PhotoEditor } from "./Photos";
+import { PRICE_SG, TAGS, scoreWord, tagLabel, todayStr } from "@/lib/sg";
 
 export default function SpotForm({
   initial,
@@ -23,7 +25,7 @@ export default function SpotForm({
   onSave: (s: Partial<Spot>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   const [s, setS] = useState<Partial<Spot>>(() => {
     const base: Partial<Spot> = {
       name: "",
@@ -57,6 +59,18 @@ export default function SpotForm({
     setDish("");
   };
   const [confirmDel, setConfirmDel] = useState(false);
+  const [tagText, setTagText] = useState("");
+  const tags = s.tags ?? [];
+  const toggleTag = (t: string) =>
+    setS((p) => {
+      const cur = p.tags ?? [];
+      return { ...p, tags: cur.includes(t) ? cur.filter((x) => x !== t) : cur.length >= 8 ? cur : [...cur, t] };
+    });
+  const addCustomTag = () => {
+    const t = tagText.trim().slice(0, 24);
+    if (t && !tags.some((x) => x.toLowerCase() === t.toLowerCase())) toggleTag(t[0].toUpperCase() + t.slice(1));
+    setTagText("");
+  };
 
   const set = <K extends keyof Spot>(k: K, v: Spot[K]) => setS((p) => ({ ...p, [k]: v }));
   const setPer = (k: "ratings" | "notes", p: Partner, v: number | string | undefined) =>
@@ -118,7 +132,7 @@ export default function SpotForm({
           <input
             value={s.name ?? ""}
             onChange={(e) => set("name", e.target.value)}
-            placeholder="e.g. that prawn mee stall at Old Airport Road"
+            placeholder="e.g. Hill Street Tai Hwa Pork Noodle"
             autoFocus={isNew}
             required
           />
@@ -134,7 +148,7 @@ export default function SpotForm({
             </select>
           </label>
           <label>
-            Price
+            Price per pax
             <div className="price">
               {PRICE.map((p, i) => (
                 <button
@@ -142,11 +156,13 @@ export default function SpotForm({
                   key={p}
                   className={s.price === i + 1 ? "on" : ""}
                   onClick={() => set("price", i + 1)}
+                  title={`${PRICE_SG[i].d} (${PRICE_SG[i].h})`}
                 >
                   {p}
                 </button>
               ))}
             </div>
+            <small className="price-hint">{s.price ? `${PRICE_SG[s.price - 1].d}, ${PRICE_SG[s.price - 1].h}` : ""}</small>
           </label>
         </div>
 
@@ -192,12 +208,32 @@ export default function SpotForm({
           </datalist>
         </label>
 
+        <div className="tag-edit">
+          <span className="lbl">Tags</span>
+          <div className="tag-chips">
+            {[...TAGS.map((x) => x.t), ...tags.filter((t) => !TAGS.some((x) => x.t === t))].map((t) => (
+              <button type="button" key={t} className={`tag-btn ${tags.includes(t) ? "on" : ""}`} onClick={() => toggleTag(t)}>
+                {tagLabel(t)}
+              </button>
+            ))}
+            <input
+              className="tag-new"
+              value={tagText}
+              maxLength={24}
+              placeholder="+ own tag"
+              onChange={(e) => setTagText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
+              onBlur={addCustomTag}
+            />
+          </div>
+        </div>
+
         {(!visited || s.dishes) && <label>
           {visited ? "Must-order dishes" : "Dishes we want to try"}
           <input
             value={s.dishes ?? ""}
             onChange={(e) => set("dishes", e.target.value)}
-            placeholder="mentaiko udon, the matcha soft serve"
+            placeholder="bak chor mee dry, extra chilli"
           />
         </label>}
 
@@ -266,7 +302,7 @@ export default function SpotForm({
               )}
               {orders.length < 12 && (
                 <div className="order-add">
-                  <input value={dish} maxLength={40} placeholder="e.g. mentaiko udon"
+                  <input value={dish} maxLength={40} placeholder="e.g. char kway teow, less oil"
                     onChange={(e) => setDish(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDish(); } }} />
                   <button type="button" className="btn ghost small" onClick={addDish} disabled={!dish.trim()}>Add</button>
@@ -279,7 +315,7 @@ export default function SpotForm({
                 <div key={p} className={`rate ${p}`}>
                   <div className="rate-head">
                     <span>{names[p]}'s score{p === me ? " (you)" : ""}</span>
-                    <b>{s.ratings?.[p] ?? "–"}</b>
+                    <b>{s.ratings?.[p] ?? "–"} <small className="sw-word">{scoreWord(s.ratings?.[p])}</small></b>
                   </div>
                   <input
                     type="range"
@@ -309,7 +345,7 @@ export default function SpotForm({
               rows={2}
               value={s.notes?.[p] ?? ""}
               onChange={(e) => setPer("notes", p, e.target.value)}
-              placeholder={visited ? "the broth was unreal…" : "saw this on TikTok, looks so good"}
+              placeholder={visited ? "the broth damn shiok…" : "saw this on TikTok, looks so good leh"}
             />
           </label>
         ))}
@@ -322,7 +358,7 @@ export default function SpotForm({
                 rows={3}
                 value={s.memory ?? ""}
                 onChange={(e) => set("memory", e.target.value)}
-                placeholder="the night it poured and we shared one umbrella…"
+                placeholder="the night it poured and we waited at the void deck…"
               />
             </label>
             <label className="check">
@@ -331,6 +367,8 @@ export default function SpotForm({
             </label>
           </>
         )}
+
+        <PhotoEditor photos={s.photos ?? []} onChange={(p) => set("photos", p)} />
 
         {err && <div className="err">{err}</div>}
 

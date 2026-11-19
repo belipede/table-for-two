@@ -4,7 +4,9 @@ import type * as Leaflet from "leaflet";
 import { createBaseMap, escapeHtml } from "@/lib/basemap";
 import { avatarSvg, type Avatar } from "@/lib/avatar";
 import OrderChips from "./OrderChips";
-import { STATION_BY_NAME } from "@/lib/stations";
+import { api } from "@/lib/api";
+import { STATION_BY_NAME, STATION_NAMES, inSg } from "@/lib/stations";
+import { distM, fmtDist, scoreWord, walkMins } from "@/lib/sg";
 import { PRICE, avgScore, type Partner, type Spot } from "@/lib/types";
 
 /** Where a spot sits on the map: its own pin, else near its MRT station. */
@@ -18,8 +20,8 @@ export function spotPosition(s: Spot, nthAtStation = 0): { ll: [number, number];
   return { ll: [st.ll[0] + Math.sin(a) * r, st.ll[1] + Math.cos(a) * r], exact: false };
 }
 
-const LINES = ["hungry? 🍜", "what's for dinner? 🤔", "supper later? 🌙", "bubble tea run? 🧋", "i'm starving 😩", "your pick tonight 💕"];
-const ARRIVE = ["ooh this one! 😋", "let's go here 💕", "yum yum 🤤", "date night? ✨", "can we go? 🥺"];
+const LINES = ["hungry already 🍜", "eat what ah? 🤔", "supper later? 🌙", "teh peng run? 🧋", "die liao, starving 😩", "you choose lah 💕", "dabao or dine in? 🥡"];
+const ARRIVE = ["shiok, this one! 😋", "jom, let's go 💕", "sedap sia 🤤", "date night? ✨", "can or not? 🥺", "queue also worth it ⏳"];
 
 export default function SgMap({
   spots,
@@ -44,6 +46,11 @@ export default function SgMap({
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const fittedRef = useRef(false);
+  const [near, setNear] = useState<{ ll: [number, number]; label: string } | null>(null);
+  const [asking, setAsking] = useState<string | null>(null);
+  const [mrtText, setMrtText] = useState("");
+  const [locating, setLocating] = useState(false);
+  const youRef = useRef<Leaflet.Marker | null>(null);
 
   const placed = useMemo(() => {
     const perStation: Record<string, number> = {};
@@ -191,6 +198,70 @@ export default function SgMap({
     walkRef.current = requestAnimationFrame(step);
   }
 
+  // "you are here" dot
+  useEffect(() => {
+    const L = LRef.current, map = mapRef.current;
+    if (!ready || !L || !map) return;
+    youRef.current?.remove();
+    youRef.current = null;
+    if (!near) return;
+    youRef.current = L.marker(near.ll, {
+      icon: L.divIcon({ className: "you-wrap", html: `<div class="you-dot"><i></i><span>${escapeHtml(near.label)}</span></div>`, iconSize: [0, 0] }),
+      zIndexOffset: 1500,
+      keyboard: false,
+      interactive: false,
+    }).addTo(map);
+    // keep the dot in the top half, clear of the list card
+    map.once("moveend", () => map.panBy([0, Math.round(map.getSize().y * 0.22)], { animate: true }));
+    map.flyTo(near.ll, Math.max(map.getZoom(), 15), { duration: 0.8 });
+  }, [ready, near]);
+
+  const closest = useMemo(
+    () => (near ? placed.map((p) => ({ ...p, d: distM(near.ll, p.ll) })).sort((a, b) => a.d - b.d).slice(0, 5) : []),
+    [near, placed]
+  );
+
+  function findMe() {
+    if (near) return setNear(null);
+    setSelected(null);
+    if (!navigator.geolocation) return setAsking("Can't find you here. Which MRT are you near?");
+    setLocating(true);
+    let done = false;
+    const fail = (why: string) => {
+      if (done) return;
+      done = true;
+      setLocating(false);
+      setAsking(why);
+    };
+    const t = setTimeout(() => fail("Location's taking too long. Which MRT are you near?"), 8000);
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          setLocating(false);
+          const ll: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          if (inSg(ll[0], ll[1])) setNear({ ll, label: "you" });
+          else setAsking("Looks like you're not in Singapore. Which MRT should we start from?");
+        },
+        () => { clearTimeout(t); fail("Location is blocked in here. Which MRT are you near?"); },
+        { enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 }
+      );
+    } catch {
+      clearTimeout(t);
+      fail("Location is blocked in here. Which MRT are you near?");
+    }
+  }
+
+  function pickMrt(e?: React.FormEvent) {
+    e?.preventDefault();
+    const n = STATION_NAMES.find((x) => x.toLowerCase() === mrtText.trim().toLowerCase());
+    if (!n) return;
+    setNear({ ll: STATION_BY_NAME[n].ll, label: `${n} MRT` });
+    setAsking(null);
+  }
+
   function fitAll() {
     const L = LRef.current, map = mapRef.current;
     if (!L || !map) return;
@@ -221,6 +292,10 @@ export default function SgMap({
       {!ready && <div className="sgmap-loading">Unfolding the map… 🗺️</div>}
 
       <div className="sgmap-fabs">
+        <button className={`fab ${near ? "on" : ""}`} onClick={findMe} title="What's near me?">
+          <span className="fab-label">{locating ? "Finding you…" : near ? "Clear" : "Near me"}</span>
+          <span className="fab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="7" /></svg></span>
+        </button>
         <button className="fab" onClick={surprise} title="Pick somewhere from our wishlist">
           <span className="fab-label">Surprise us</span>
           <span className="fab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1" fill="currentColor" /><circle cx="15" cy="15" r="1" fill="currentColor" /><circle cx="15" cy="9" r="1" fill="currentColor" /><circle cx="9" cy="15" r="1" fill="currentColor" /></svg></span>
@@ -249,6 +324,34 @@ export default function SgMap({
         {unplaced > 0 && <span className="muted">{unplaced} not on the map yet: give {unplaced > 1 ? "them" : "it"} a location or nearest MRT</span>}
       </div>
 
+      {asking && (
+        <form className="sgmap-card near-ask" onSubmit={pickMrt}>
+          <button type="button" className="x small" onClick={() => setAsking(null)} aria-label="close">×</button>
+          <b>📍 {asking}</b>
+          <div className="order-add">
+            <input value={mrtText} onChange={(e) => setMrtText(e.target.value)} list="near-mrt" placeholder="e.g. Tanjong Pagar" autoFocus />
+            <datalist id="near-mrt">{STATION_NAMES.map((n) => <option key={n} value={n} />)}</datalist>
+            <button className="btn primary small" disabled={!STATION_NAMES.some((x) => x.toLowerCase() === mrtText.trim().toLowerCase())}>Go</button>
+          </div>
+        </form>
+      )}
+
+      {near && !selSpot && (
+        <div className="sgmap-card near-list">
+          <div className="sgmap-card-top">
+            <b>Closest to {near.label}</b>
+            <button className="x small" onClick={() => setNear(null)} aria-label="close">×</button>
+          </div>
+          {closest.length ? closest.map((p) => (
+            <button key={p.s.id} className="near-row" onClick={() => { setSelected(p.s.id); mapRef.current?.flyTo(p.ll, Math.max(mapRef.current.getZoom(), 15), { duration: 0.7 }); }}>
+              <b className={`dot ${p.s.status === "visited" ? "v" : "w"}`} />
+              <span className="near-name">{p.s.name}</span>
+              <span className="near-d">{fmtDist(p.d)}{p.d < 2500 ? ` · ${walkMins(p.d)} min walk` : ""}</span>
+            </button>
+          )) : <p className="meta">No places on the map yet.</p>}
+        </div>
+      )}
+
       {selSpot && (
         <div className="sgmap-card" onClick={() => onOpen(selSpot)}>
           <div className="sgmap-card-top">
@@ -257,17 +360,23 @@ export default function SgMap({
             </span>
             {selSpot.ourSpot && <span className="pill pill-o">our spot ♥</span>}
             {selScore != null && selSpot.status === "visited" && (
-              <span className="score">{selScore}<small>/10</small></span>
+              <span className="score">{selScore}<small>/10</small><em className="score-word">{scoreWord(selScore)}</em></span>
             )}
             <button className="x small" onClick={(e) => { e.stopPropagation(); setSelected(null); }} aria-label="close">×</button>
           </div>
           <h3>{selSpot.name}</h3>
           <p className="meta">
             {station && <>🚇 {station.n} · </>}
+            {near && <>{fmtDist(distM(near.ll, sel!.ll))} away · </>}
             {selSpot.status === "visited" && <>been {selSpot.visits ?? 1}× · </>}
             {PRICE[selSpot.price - 1]}
             {selSpot.cuisine.length ? ` · ${selSpot.cuisine.join(", ")}` : ""} · added by {names[selSpot.addedBy]}
           </p>
+          {!!selSpot.photos?.length && (
+            <div className="map-photos">
+              {selSpot.photos.slice(0, 4).map((id) => <img key={id} src={api().photoUrl(id)} alt="" />)}
+            </div>
+          )}
           {!!selSpot.orders?.length && <OrderChips orders={selSpot.orders} max={4} />}
           {selSpot.dishes && <p className="dishes"><b>Must order:</b> {selSpot.dishes}</p>}
           {selSpot.memory && <p className="memory">💌 {selSpot.memory}</p>}

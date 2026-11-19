@@ -3,8 +3,8 @@
 import { createRoot } from "react-dom/client";
 import FoodApp from "@/components/FoodApp";
 import { ls, setApi, type Api } from "@/lib/api";
-import { cleanSettings, cleanSpot } from "@/lib/validate";
-import type { Partner, Settings, Spot } from "@/lib/types";
+import { cleanPlan, cleanSettings, cleanSpot } from "@/lib/validate";
+import type { Partner, Plan, Settings, Spot } from "@/lib/types";
 
 declare global {
   interface Window {
@@ -48,11 +48,16 @@ async function boot() {
     );
     return;
   }
+  // optional extras: photo uploads (Editors only) and file downloads (calendar invites)
+  const [assets, downloads] = claude
+    ? await Promise.all([claude.use("assets").catch(() => null), claude.use("downloads").catch(() => null)])
+    : [null, null];
   const uid: string | null = user ? await user.id().catch(() => null) : null;
   const canWrite: boolean | null = user?.can ? await Promise.resolve(user.can("data.write")).catch(() => null) : null;
 
   const spotsCol = db.collection("spots");
   const settingsDoc = db.doc("meta/settings");
+  const plansCol = db.collection("plans");
   const prefsDoc = uid ? db.doc(`data/users/${uid}/prefs`) : null;
 
   const dbApi: Api = {
@@ -108,6 +113,40 @@ async function boot() {
       ls.set("t42_me", p);
       if (prefsDoc) await prefsDoc.set({ me: p }).catch(() => {});
     },
+    subscribePlans: () => () => {},
+    savePlan: async () => { throw new Error("not ready"); },
+    deletePlan: async () => {},
+    photoUrl: (id) => id,
+  };
+  dbApi.subscribePlans = (cb) =>
+    plansCol.onSnapshot((snap: any) => cb(snap.docs.map((d: any) => ({ ...(d.data() as Plan), id: d.id }))), () => {});
+  dbApi.savePlan = async (p) => {
+    let prev: Plan | undefined;
+    if (p.id) {
+      const snap = await plansCol.doc(p.id).get().catch(() => null);
+      if (snap?.exists) prev = { ...(snap.data() as Plan), id: p.id };
+    }
+    const plan = cleanPlan(p, prev);
+    if (typeof plan === "string") throw new Error(plan);
+    try {
+      await plansCol.doc(plan.id).set(plain(plan));
+    } catch {
+      throw new Error(canWrite !== true ? "You can look but not edit yet. Ask Ben to share it with you as an Editor." : "Couldn't save, try again in a sec");
+    }
+    return plan;
+  };
+  dbApi.deletePlan = async (id) => {
+    await plansCol.doc(id).delete();
+  };
+  dbApi.photoUrl = (id) => "/_blob/" + id;
+  if (assets) {
+    dbApi.uploadPhoto = async (blob) => (await assets.upload(blob)).id;
+    dbApi.deletePhoto = async (id) => {
+      await assets.delete(id).catch(() => {});
+    };
+  }
+  if (downloads) dbApi.saveFile = async (filename, data) => {
+    await downloads.save({ filename, data });
   };
   setApi(dbApi);
 

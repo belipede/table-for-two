@@ -24,6 +24,24 @@ export interface Spot {
   ourSpot?: boolean; // a forever favourite
   visits?: number; // how many times we've been
   orders?: Order[]; // what we usually get
+  tags?: string[]; // hawker, supper, date night…
+  photos?: string[]; // asset ids
+  visitLog?: string[]; // yyyy-mm-dd of each visit we logged
+}
+
+/** A date on the calendar. Kept apart from spots so activities and pop-ups can join later. */
+export type PlanKind = "makan" | "activity" | "popup";
+export interface Plan {
+  id: string;
+  on: string; // yyyy-mm-dd
+  at?: string; // hh:mm
+  title: string;
+  kind: PlanKind;
+  spotId?: string;
+  theme?: string;
+  note?: string;
+  createdBy: Partner;
+  createdAt: number;
 }
 
 export interface Order {
