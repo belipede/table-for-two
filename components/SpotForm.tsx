@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { AREAS, PRICE, type Partner, type Spot } from "@/lib/types";
-import { STATION_NAMES } from "@/lib/mrt";
+import { STATION_BY_NAME, STATION_NAMES, coordsFromMapsUrl } from "@/lib/stations";
+import LocationPicker from "./LocationPicker";
 
 export default function SpotForm({
   initial,
@@ -44,6 +45,7 @@ export default function SpotForm({
   });
   const [cuisineText, setCuisineText] = useState((initial?.cuisine ?? []).join(", "));
   const [mrtText, setMrtText] = useState(initial?.mrt ?? "");
+  const [picking, setPicking] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -155,6 +157,18 @@ export default function SpotForm({
           </datalist>
         </label>
 
+        <div className="loc-row">
+          <span className="lbl">On the map</span>
+          <button type="button" className={`btn ghost small ${s.lat != null ? "pinned" : ""}`} onClick={() => setPicking(true)}>
+            {s.lat != null ? "📍 Pinned, change it" : "📍 Pin the exact spot"}
+          </button>
+          {s.lat == null && (
+            <span className="hint">
+              {STATION_BY_NAME[mrtText] ? `otherwise shown near ${mrtText} MRT` : "or pick a nearest MRT"}
+            </span>
+          )}
+        </div>
+
         <label>
           Cuisine (comma separated)
           <input
@@ -183,7 +197,11 @@ export default function SpotForm({
           Google Maps link
           <input
             value={s.mapsUrl ?? ""}
-            onChange={(e) => set("mapsUrl", e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              const ll = coordsFromMapsUrl(v);
+              setS((p) => ({ ...p, mapsUrl: v, ...(ll && p.lat == null ? { lat: ll[0], lng: ll[1] } : {}) }));
+            }}
             placeholder="https://maps.app.goo.gl/…"
             inputMode="url"
           />
@@ -271,6 +289,18 @@ export default function SpotForm({
         )}
 
         {err && <div className="err">{err}</div>}
+
+        {picking && (
+          <LocationPicker
+            initial={s.lat != null && s.lng != null ? [s.lat, s.lng] : undefined}
+            center={STATION_BY_NAME[mrtText]?.ll}
+            onClose={() => setPicking(false)}
+            onPick={(ll) => {
+              setS((p) => ({ ...p, lat: ll?.[0], lng: ll?.[1] }));
+              setPicking(false);
+            }}
+          />
+        )}
 
         <div className="form-actions">
           {!isNew &&

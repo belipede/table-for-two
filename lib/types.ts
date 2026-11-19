@@ -6,6 +6,8 @@ export interface Spot {
   name: string;
   area: string;
   mrt?: string; // nearest MRT station
+  lat?: number;
+  lng?: number;
   cuisine: string[];
   price: number; // 1-4
   status: Status;

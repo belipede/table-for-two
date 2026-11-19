@@ -18,7 +18,10 @@ const res = await build({
   logOverride: { "unsupported-directive": "silent" },
 });
 const js = res.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
-const css = readFileSync(path.join(root, "app/globals.css"), "utf8");
+const css =
+  readFileSync(path.join(root, "node_modules/leaflet/dist/leaflet.css"), "utf8") +
+  "\n" +
+  readFileSync(path.join(root, "app/globals.css"), "utf8");
 const html = `<!DOCTYPE html>
 <html lang="en">
 <head>

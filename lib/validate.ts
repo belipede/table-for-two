@@ -1,5 +1,5 @@
 import type { Partner, Settings, Spot } from "./types";
-import { STATIONS } from "./mrt";
+import { STATION_BY_NAME, inSg } from "./stations";
 
 const str = (v: unknown, max = 2000) =>
   typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined;
@@ -31,7 +31,10 @@ export function cleanSpot(input: any, prev?: Spot): Spot | string {
     addedBy: prev?.addedBy ?? partner(input?.addedBy),
     name,
     area: str(input?.area, 40) ?? "Central",
-    mrt: typeof input?.mrt === "string" && STATIONS[input.mrt] ? input.mrt : undefined,
+    mrt: typeof input?.mrt === "string" && STATION_BY_NAME[input.mrt] ? input.mrt : undefined,
+    ...(typeof input?.lat === "number" && typeof input?.lng === "number" && inSg(input.lat, input.lng)
+      ? { lat: Math.round(input.lat * 1e6) / 1e6, lng: Math.round(input.lng * 1e6) / 1e6 }
+      : {}),
     cuisine: Array.isArray(input?.cuisine)
       ? input.cuisine.map((c: unknown) => str(c, 30)).filter(Boolean).slice(0, 8)
       : [],

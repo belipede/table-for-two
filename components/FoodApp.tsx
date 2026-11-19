@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { AREAS, PRICE, avgScore, type Partner, type Settings, type Spot } from "@/lib/types";
 import SpotForm from "./SpotForm";
-import MrtMap from "./MrtMap";
+import SgMap from "./SgMap";
 
 type Tab = "all" | "visited" | "wishlist" | "ours";
 type Sort = "newest" | "top" | "recent" | "debate";
@@ -230,7 +230,7 @@ export default function FoodApp({
       </nav>
         <div className="view-toggle">
           <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>▦ List</button>
-          <button className={view === "map" ? "on" : ""} onClick={() => setView("map")}>🚇 MRT map</button>
+          <button className={view === "map" ? "on" : ""} onClick={() => setView("map")}>🗺️ Map</button>
         </div>
       </div>
 
@@ -267,7 +267,7 @@ export default function FoodApp({
       </div>
 
       {view === "map" ? (
-        <MrtMap spots={shown} names={names} onOpen={(s) => setEditing({ spot: s })} />
+        <SgMap spots={shown} names={names} onOpen={(s) => setEditing({ spot: s })} />
       ) : shown.length === 0 ? (
         <div className="empty">
           <div className="empty-emoji">{spots.length ? "🔍" : "🥢"}</div>
