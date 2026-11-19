@@ -1,4 +1,5 @@
 import type { Partner, Spot } from "./types";
+import { STATIONS } from "./mrt";
 
 const str = (v: unknown, max = 2000) =>
   typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined;
@@ -30,6 +31,7 @@ export function cleanSpot(input: any, prev?: Spot): Spot | string {
     addedBy: prev?.addedBy ?? partner(input?.addedBy),
     name,
     area: str(input?.area, 40) ?? "Central",
+    mrt: typeof input?.mrt === "string" && STATIONS[input.mrt] ? input.mrt : undefined,
     cuisine: Array.isArray(input?.cuisine)
       ? input.cuisine.map((c: unknown) => str(c, 30)).filter(Boolean).slice(0, 8)
       : [],

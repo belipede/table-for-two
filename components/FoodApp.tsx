@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AREAS, PRICE, avgScore, type Partner, type Settings, type Spot } from "@/lib/types";
 import SpotForm from "./SpotForm";
+import MrtMap from "./MrtMap";
 
 type Tab = "all" | "visited" | "wishlist" | "ours";
 type Sort = "newest" | "top" | "recent" | "debate";
@@ -28,6 +29,7 @@ export default function FoodApp({
   const [editing, setEditing] = useState<{ spot: Partial<Spot> | null; markVisited?: boolean } | null>(null);
   const [spin, setSpin] = useState<Spot | null | "none">(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [view, setView] = useState<"list" | "map">("list");
 
   const names = settings.names;
 
@@ -103,7 +105,7 @@ export default function FoodApp({
       if (cuisine && !s.cuisine.includes(cuisine)) return false;
       if (by && s.addedBy !== by) return false;
       if (needle) {
-        const hay = [s.name, s.area, s.dishes, s.memory, s.notes.a, s.notes.b, ...s.cuisine]
+        const hay = [s.name, s.area, s.mrt, s.dishes, s.memory, s.notes.a, s.notes.b, ...s.cuisine]
           .join(" ")
           .toLowerCase();
         if (!hay.includes(needle)) return false;
@@ -226,6 +228,7 @@ export default function FoodApp({
         </div>
       </header>
 
+      <div className="nav-row">
       <nav className="tabs">
         {(
           [
@@ -240,6 +243,11 @@ export default function FoodApp({
           </button>
         ))}
       </nav>
+        <div className="view-toggle">
+          <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>▦ List</button>
+          <button className={view === "map" ? "on" : ""} onClick={() => setView("map")}>🚇 MRT map</button>
+        </div>
+      </div>
 
       <div className="filters">
         <input
@@ -273,7 +281,9 @@ export default function FoodApp({
         </select>
       </div>
 
-      {shown.length === 0 ? (
+      {view === "map" ? (
+        <MrtMap spots={shown} names={names} onOpen={(s) => setEditing({ spot: s })} />
+      ) : shown.length === 0 ? (
         <div className="empty">
           <div className="empty-emoji">{spots.length ? "🔍" : "🥢"}</div>
           {spots.length ? (
@@ -417,7 +427,7 @@ function Card({
       </div>
       <h3>{s.name}</h3>
       <p className="meta">
-        {s.area} · {PRICE[s.price - 1]}
+        {s.mrt ? `🚇 ${s.mrt}` : s.area} · {PRICE[s.price - 1]}
         {s.visitedOn && visited && ` · ${new Date(s.visitedOn).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}`}
       </p>
       {s.cuisine.length > 0 && (

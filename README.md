@@ -10,6 +10,7 @@ notes and date memories) and places you're dying to try.
 - **"Me too" hearts** on wishlist spots, so you can see which ones you *both* want
 - **Our spots ♥** for your forever favourites
 - **🎲 Where should we eat tonight?** picks from the wishlist (spots you both want get extra chances)
+- **🚇 MRT map**: give each spot its nearest MRT and see your spots pinned on a train-line map (tap a station to see what's there)
 - Stats: dates eaten, taste-match %, and who's the tougher critic
 - Search, filter by area / cuisine / who added it, sort by newest, top rated, recent, or biggest disagreement
 - Names and "together since" date are editable in the app (**us ⚙︎**)

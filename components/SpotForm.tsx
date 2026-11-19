@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AREAS, PRICE, type Partner, type Spot } from "@/lib/types";
+import { STATION_NAMES } from "@/lib/mrt";
 
 export default function SpotForm({
   initial,
@@ -42,6 +43,7 @@ export default function SpotForm({
     return base;
   });
   const [cuisineText, setCuisineText] = useState((initial?.cuisine ?? []).join(", "));
+  const [mrtText, setMrtText] = useState(initial?.mrt ?? "");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -57,8 +59,15 @@ export default function SpotForm({
     e.preventDefault();
     setBusy(true);
     setErr("");
+    const mrt = STATION_NAMES.find((n) => n.toLowerCase() === mrtText.trim().toLowerCase());
+    if (mrtText.trim() && !mrt) {
+      setErr("Pick the MRT station from the list (or leave it blank)");
+      setBusy(false);
+      return;
+    }
     try {
       await onSave({
+        mrt,
         ...s,
         cuisine: cuisineText
           .split(",")
@@ -130,6 +139,21 @@ export default function SpotForm({
             </div>
           </label>
         </div>
+
+        <label>
+          Nearest MRT 🚇
+          <input
+            value={mrtText}
+            onChange={(e) => setMrtText(e.target.value)}
+            placeholder="start typing, e.g. Tiong Bahru"
+            list="mrt-list"
+          />
+          <datalist id="mrt-list">
+            {STATION_NAMES.map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
+        </label>
 
         <label>
           Cuisine (comma separated)
