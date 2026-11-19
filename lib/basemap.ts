@@ -95,13 +95,12 @@ export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveL
   const islandCanvas = Lf.canvas({ padding: 0.5, pane: "island" });
   const canvas = Lf.canvas({ padding: 0.5, pane: "ground" });
 
-  if (opts.tilt) {
-    // a big sea under everything, so the far horizon isn't empty when tilted
-    map.createPane("sea").style.zIndex = "200";
-    Lf.rectangle([[SG_BOUNDS.south - 0.6, SG_BOUNDS.west - 0.8], [SG_BOUNDS.north + 0.6, SG_BOUNDS.east + 0.8]], {
-      renderer: Lf.canvas({ padding: 0.6, pane: "sea" }), stroke: false, fillColor: PALETTE.sea, fillOpacity: 1, interactive: false,
-    }).addTo(map);
-  }
+  // a big sea under everything (so the far horizon isn't empty when tilted), with little waves
+  map.createPane("sea").style.zIndex = "200";
+  const seaCanvas = Lf.canvas({ padding: 0.6, pane: "sea" });
+  const seaBox: [[number, number], [number, number]] = [[SG_BOUNDS.south - 0.6, SG_BOUNDS.west - 0.8], [SG_BOUNDS.north + 0.6, SG_BOUNDS.east + 0.8]];
+  Lf.rectangle(seaBox, { renderer: seaCanvas, stroke: false, fillColor: PALETTE.sea, fillOpacity: 1, interactive: false }).addTo(map);
+  Lf.rectangle(seaBox, { renderer: seaCanvas, stroke: false, fillColor: TEX.waves() as any, fillOpacity: 1, interactive: false }).addTo(map);
 
   const landRings = data.land.map(dec);
   // sandy beach rim, then the grass on top
@@ -109,12 +108,22 @@ export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveL
     renderer: islandCanvas, stroke: true, color: PALETTE.beach, weight: 7, lineJoin: "round",
     fillColor: PALETTE.land, fillOpacity: 1, interactive: false,
   }).addTo(map);
+  // sand speckles on the beach rim, grass tufts on the land
+  Lf.polygon(landRings, {
+    renderer: islandCanvas, stroke: true, color: TEX.sand() as any, weight: 7, lineJoin: "round",
+    fillColor: TEX.grass() as any, fillOpacity: 1, interactive: false,
+  }).addTo(map);
 
   // nature areas
   const greens = data.areas.filter((a) => GREEN_AREAS.test(a.n));
-  Lf.polygon(greens.flatMap((a) => a.r.map(dec)), {
+  const greenRings = greens.flatMap((a) => a.r.map(dec));
+  Lf.polygon(greenRings, {
     renderer: canvas, stroke: false, fillColor: PALETTE.green, fillOpacity: 0.9, interactive: false,
   }).addTo(map);
+  Lf.polygon(greenRings, { renderer: canvas, stroke: false, fillColor: TEX.forest() as any, fillOpacity: 1, interactive: false }).addTo(map);
+  // little town blocks in the neighbourhoods
+  const towns = data.areas.filter((a) => !GREEN_AREAS.test(a.n));
+  Lf.polygon(towns.flatMap((a) => a.r.map(dec)), { renderer: canvas, stroke: false, fillColor: TEX.blocks() as any, fillOpacity: 1, interactive: false }).addTo(map);
   Lf.polyline(data.areas.flatMap((a) => a.r.map(dec)), {
     renderer: canvas, color: PALETTE.areaLine, weight: 1.2, dashArray: "1 6", lineCap: "round", interactive: false,
   }).addTo(map);
@@ -146,6 +155,20 @@ export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveL
     }).addTo(map);
   }
 
+  // scattered trees, flowers and buildings that appear as you zoom in
+  const rand = seeded(7);
+  const addDeco = (ll: [number, number], e: string, cls: string) =>
+    Lf.marker(ll, { interactive: false, keyboard: false, icon: Lf.divIcon({ className: `deco ${cls}`, html: `<span>${e}</span>`, iconSize: [0, 0] }) }).addTo(map);
+  for (const a of greens) {
+    const rings = a.r.map(dec);
+    for (const ll of scatter(rings, 12, rand)) addDeco(ll, pick(["🌳", "🌲", "🌳", "🌴", "🌿"], rand), "deco-tree");
+  }
+  for (const a of towns) {
+    const rings = a.r.map(dec);
+    for (const ll of scatter(rings, 4, rand)) addDeco(ll, pick(["🏢", "🏘️", "🏬", "🏠", "🏫"], rand), "deco-town");
+    for (const ll of scatter(rings, 4, rand)) addDeco(ll, pick(["🌳", "🌼", "🌷", "🌳"], rand), "deco-small");
+  }
+
   const mirror: HTMLElement[] = [];
   (map as any)._zlMirror = mirror;
   const restyle = () => {
@@ -165,6 +188,93 @@ export async function createBaseMap(Lf: L, el: HTMLElement, opts: { interactiveL
   if (opts.tilt && el.parentElement) setupTilt(Lf, map, el, el.parentElement);
 
   return map;
+}
+
+// ---- textures: small tiles drawn once, used as repeating canvas patterns ----
+function tile(size: number, draw: (c: CanvasRenderingContext2D) => void): CanvasPattern | string {
+  if (typeof document === "undefined") return "transparent";
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = size;
+  const c = cv.getContext("2d");
+  if (!c) return "transparent";
+  draw(c);
+  return c.createPattern(cv, "repeat") ?? "transparent";
+}
+function once<T>(f: () => T) { let v: T | undefined; return () => (v ??= f()); }
+const TEX = {
+  grass: once(() => tile(56, (c) => {
+    const r = seeded(3);
+    c.lineCap = "round";
+    for (let i = 0; i < 9; i++) {
+      const x = r() * 56, y = r() * 56;
+      c.strokeStyle = i % 3 ? "rgba(110,185,110,0.45)" : "rgba(255,255,255,0.55)";
+      c.lineWidth = 1.3;
+      c.beginPath(); c.moveTo(x - 2.5, y - 3); c.lineTo(x, y); c.lineTo(x + 2.5, y - 3.5); c.stroke();
+    }
+    for (let i = 0; i < 6; i++) { c.fillStyle = "rgba(255,255,255,0.35)"; c.beginPath(); c.arc(r() * 56, r() * 56, 1, 0, 7); c.fill(); }
+  })),
+  forest: once(() => tile(40, (c) => {
+    const r = seeded(5);
+    for (let i = 0; i < 5; i++) {
+      const x = r() * 40, y = r() * 40, rad = 3.5 + r() * 2.5;
+      c.fillStyle = "rgba(70,150,80,0.35)"; c.beginPath(); c.arc(x, y + 1.5, rad, 0, 7); c.fill();
+      c.fillStyle = "rgba(120,200,110,0.55)"; c.beginPath(); c.arc(x - 0.8, y - 0.5, rad * 0.75, 0, 7); c.fill();
+      c.fillStyle = "rgba(255,255,255,0.35)"; c.beginPath(); c.arc(x - 1.8, y - 1.8, rad * 0.3, 0, 7); c.fill();
+    }
+  })),
+  blocks: once(() => tile(48, (c) => {
+    const r = seeded(9);
+    for (let i = 0; i < 4; i++) {
+      const x = r() * 44, y = r() * 44, w = 5 + r() * 6, h = 4 + r() * 5;
+      c.fillStyle = "rgba(255,255,255,0.32)"; c.fillRect(x, y, w, h);
+      c.fillStyle = "rgba(150,200,140,0.25)"; c.fillRect(x, y + h, w, 1.5);
+    }
+  })),
+  waves: once(() => tile(64, (c) => {
+    const r = seeded(11);
+    c.strokeStyle = "rgba(255,255,255,0.55)"; c.lineWidth = 1.6; c.lineCap = "round";
+    for (let i = 0; i < 4; i++) {
+      const x = r() * 56, y = r() * 60;
+      c.beginPath(); c.arc(x, y, 4, Math.PI * 1.1, Math.PI * 1.9); c.arc(x + 7, y, 4, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
+    }
+  })),
+  sand: once(() => tile(16, (c) => {
+    c.fillStyle = "#fff1c9"; c.fillRect(0, 0, 16, 16);
+    const r = seeded(13);
+    for (let i = 0; i < 7; i++) { c.fillStyle = i % 2 ? "rgba(225,190,120,0.7)" : "rgba(255,255,255,0.9)"; c.fillRect(r() * 16, r() * 16, 1.4, 1.4); }
+  })),
+};
+
+function seeded(seed: number) {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let x = Math.imul(t ^ (t >>> 15), 1 | t);
+    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const pick = <T,>(arr: T[], r: () => number) => arr[Math.floor(r() * arr.length)];
+function inRing(pt: [number, number], ring: [number, number][]) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [yi, xi] = ring[i], [yj, xj] = ring[j];
+    if (yi > pt[0] !== yj > pt[0] && pt[1] < ((xj - xi) * (pt[0] - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+/** n random points inside the biggest of the area's rings */
+function scatter(rings: [number, number][][], n: number, r: () => number): [number, number][] {
+  const ring = rings.reduce((a, b) => (b.length > a.length ? b : a), rings[0] ?? []);
+  if (ring.length < 3) return [];
+  let s = 90, w = 0, nn = -90, e = -180;
+  for (const [y, x] of ring) { s = Math.min(s, y); nn = Math.max(nn, y); w = Math.min(w || x, x); e = Math.max(e, x); }
+  const out: [number, number][] = [];
+  for (let tries = 0; out.length < n && tries < n * 40; tries++) {
+    const p: [number, number] = [s + r() * (nn - s), w + r() * (e - w)];
+    if (inRing(p, ring)) out.push(p);
+  }
+  return out;
 }
 
 export function escapeHtml(s: string) {

@@ -380,3 +380,15 @@ a { color: inherit; }
 .sgmap-fog::before { content: "☁️"; position: absolute; left: 14%; top: 8%; font-size: 28px; opacity: .9; animation: drift 18s linear infinite alternate; }
 .sgmap-fog::after { content: "☁️"; position: absolute; right: 18%; top: 18%; font-size: 20px; opacity: .8; animation: drift 24s linear infinite alternate-reverse; }
 @keyframes drift { from { transform: translateX(-20px); } to { transform: translateX(30px); } }
+
+/* scattered decorations: only once you're close enough to see them */
+.deco { pointer-events: none !important; }
+.deco span { position: absolute; transform: translate(-50%, -85%); line-height: 1; display: none; filter: drop-shadow(0 2px 1.5px rgba(30, 80, 60, 0.28)); }
+.deco-tree span { font-size: 20px; }
+.deco-town span { font-size: 22px; }
+.deco-small span { font-size: 14px; }
+.zl-13 .deco-tree span, .zl-14 .deco-tree span, .zl-15 .deco-tree span, .zl-16 .deco-tree span { display: block; }
+.zl-14 .deco-town span, .zl-15 .deco-town span, .zl-16 .deco-town span,
+.zl-14 .deco-small span, .zl-15 .deco-small span, .zl-16 .deco-small span { display: block; }
+.zl-15 .deco-tree span, .zl-16 .deco-tree span { font-size: 26px; }
+.zl-15 .deco-town span, .zl-16 .deco-town span { font-size: 28px; }
