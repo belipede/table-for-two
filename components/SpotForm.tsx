@@ -138,6 +138,17 @@ export default function SpotForm({
           />
         </label>
 
+        <div className="pick-field">
+          <span className="lbl">Whose pick?</span>
+          <div className="seg">
+            {(["a", "b"] as const).map((p) => (
+              <button key={p} type="button" className={(s.addedBy ?? me) === p ? "on" : ""} onClick={() => set("addedBy", p)}>
+                {names[p]}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="row">
           <label>
             Area
