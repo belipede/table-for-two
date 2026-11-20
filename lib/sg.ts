@@ -19,7 +19,7 @@ export const TAGS: { t: string; e: string }[] = [
   { t: "Rainy day", e: "☔" },
 ];
 export const TAG_EMOJI: Record<string, string> = Object.fromEntries(TAGS.map((x) => [x.t, x.e]));
-export const tagLabel = (t: string) => `${TAG_EMOJI[t] ?? "🏷️"} ${t}`;
+export const tagLabel = (t: string) => (TAG_EMOJI[t] ? `${TAG_EMOJI[t]} ${t}` : t);
 
 /** $ to $$$$ in Singapore money, per person. */
 export const PRICE_SG = [
