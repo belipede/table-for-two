@@ -6,7 +6,7 @@ import SpotForm from "./SpotForm";
 import SgMap from "./SgMap";
 import OrderChips from "./OrderChips";
 import AvatarEditor from "./AvatarEditor";
-import { DEFAULT_AVATARS } from "@/lib/avatar";
+import { DEFAULT_AVATARS, avatarSvg } from "@/lib/avatar";
 import { ls } from "@/lib/api";
 import { PRICE_SG, TAGS, scoreWord, tagLabel, todayStr } from "@/lib/sg";
 import { Lightbox } from "./Photos";
@@ -48,6 +48,7 @@ export default function FoodApp({
   const [showTrails, setShowTrails] = useState(false);
   const [tag, setTag] = useState("");
   const [price, setPrice] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => (ls.get("t42_theme") as Theme) || "system");
   const [sysDark, setSysDark] = useState(false);
 
@@ -227,56 +228,78 @@ export default function FoodApp({
     );
   }
 
+  const activeFilters = [area, cuisine, by, price, tag].filter(Boolean).length;
+  const clearFilters = () => {
+    setArea("");
+    setCuisine("");
+    setBy("");
+    setPrice(0);
+    setTag("");
+  };
+  const avs = settings.avatars ?? DEFAULT_AVATARS;
+  const counts: Record<Tab, number> = { all: spots.length, visited: stats.visited, wishlist: stats.wishlist, ours: stats.ours };
+
   return (
     <main className="wrap">
       <header className="hero">
         <div className="hero-top">
-          <span className="eyebrow">our food diary</span>
+          <div className="brand">
+            <div className="pair" aria-hidden="true">
+              <span className="pair-a" dangerouslySetInnerHTML={{ __html: avatarSvg(avs.a, { size: 34 }) }} />
+              <span className="pair-b" dangerouslySetInnerHTML={{ __html: avatarSvg(avs.b, { size: 34 }) }} />
+            </div>
+            <div>
+              <h1>
+                <span className="pa">{names.a}</span> <span className="amp">&amp;</span> <span className="pb">{names.b}</span>
+              </h1>
+              <p className="tagline">
+                a table for two{daysTogether != null && <> · {daysTogether.toLocaleString()} days of makan together</>}
+              </p>
+            </div>
+          </div>
           <div className="hero-actions">
-            <button className="link" onClick={flipTheme} aria-label={dark ? "light mode" : "dark mode"}>{dark ? "☀️ light" : "🌙 dark"}</button>
-            <button className="link" onClick={() => setShowSettings(true)}>us ⚙︎</button>
-            <button className="link" onClick={() => pickMe(other(me))}>
-              not {names[me]}? switch
+            <button className="btn primary desk-only" onClick={() => setEditing({ spot: null })}>+ Add a spot</button>
+            <button className="icon-btn" onClick={flipTheme} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"}>
+              {dark ? "☀" : "☾"}
+            </button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="About us and settings" title="About us">
+              ⚙︎
             </button>
           </div>
         </div>
-        <h1>
-          <span className="pa">{names.a}</span> <span className="amp">&amp;</span>{" "}
-          <span className="pb">{names.b}</span>
-          <span className="tft">a table for two</span>
-        </h1>
-        <p className="sub">
-          Every place we've makan-ed together, and every place we keep saying "eh, we should go".
-          {daysTogether != null && <> {daysTogether.toLocaleString()} days of eating together and counting 💞</>}
-        </p>
 
-        <div className="stats">
-          <Stat n={stats.visited} label="places makan-ed" emoji="🍽️" />
-          <Stat n={stats.wishlist} label="on our wishlist" emoji="📌" />
-          <Stat n={stats.ours} label="our spots" emoji="💖" />
-          <Stat n={stats.agreePct != null ? `${stats.agreePct}%` : "–"} label="taste-match" emoji="🤝" />
-        </div>
+        <dl className="stats">
+          <Stat n={stats.visited} label="makan-ed" />
+          <Stat n={stats.wishlist} label="to try" />
+          <Stat n={stats.ours} label="our spots" />
+          <Stat n={stats.agreePct != null ? `${stats.agreePct}%` : "–"} label="taste-match" />
+        </dl>
         {stats.picky && (
           <p className="picky">
-            Fun fact: <b>{stats.picky}</b> is the tougher critic (
-            {names.a} avg {stats.avgA?.toFixed(1)} · {names.b} avg {stats.avgB?.toFixed(1)})
+            <b>{stats.picky}</b> is the tougher critic ({names.a} {stats.avgA?.toFixed(1)} · {names.b} {stats.avgB?.toFixed(1)})
           </p>
         )}
 
-        <div className="cta-row">
-          <button className="btn primary" onClick={() => setEditing({ spot: null })}>
-            + Add a spot
-          </button>
-          <button className="btn ghost" onClick={spinTonight}>
-            🎲 Where we makan tonight?
-          </button>
-        </div>
+        <button className="tonight" onClick={spinTonight}>
+          <span className="tonight-die" aria-hidden="true">🎲</span>
+          <span className="tonight-txt">
+            <b>Where we makan tonight?</b>
+            <small>Let fate pick from our wishlist</small>
+          </span>
+          <span className="tonight-go" aria-hidden="true">→</span>
+        </button>
         <div className="quick-row">
-          <button onClick={() => setPlanEdit({})}><span>📅</span>Plan a date</button>
-          <button onClick={() => setShowTrails(true)}><span>🏆</span>Makan trails</button>
-          <button onClick={() => setShowYear(true)}><span>✨</span>Our year</button>
+          <button onClick={() => setPlanEdit({})}>📅 Plan a date</button>
+          <button onClick={() => setShowTrails(true)}>🏆 Makan trails</button>
+          <button onClick={() => setShowYear(true)}>✨ Our year</button>
         </div>
       </header>
+
+      <div className="dock">
+        <button className="btn primary dock-add" onClick={() => setEditing({ spot: null })}>
+          + Add a spot
+        </button>
+      </div>
 
       <Upcoming
         plans={plans}
@@ -285,70 +308,83 @@ export default function FoodApp({
         onWent={(s, p) => setEditing({ spot: { ...s, visitedOn: p.on, ...(s.status === "visited" ? { visits: (s.visits ?? 1) + 1, visitLog: [...(s.visitLog ?? (s.visitedOn ? [s.visitedOn] : [])), p.on] } : {}) }, markVisited: true, planId: p.id })}
       />
 
-      <div className="nav-row">
-      <nav className="tabs">
-        {(
-          [
-            ["all", "Everything"],
-            ["visited", "Been together"],
-            ["wishlist", "Want to try"],
-            ["ours", "Our spots ♥"],
-          ] as [Tab, string][]
-        ).map(([k, label]) => (
-          <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
-            {label}
+      <div className="toolbar">
+        <nav className="tabs" aria-label="Which spots">
+          {(
+            [
+              ["all", "All"],
+              ["visited", "Been"],
+              ["wishlist", "To try"],
+              ["ours", "Ours ♥"],
+            ] as [Tab, string][]
+          ).map(([k, label]) => (
+            <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)} aria-pressed={tab === k}>
+              {label} <span className="tab-n">{counts[k]}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="search-row">
+          <input
+            className="search"
+            type="search"
+            placeholder="Search spots, dishes…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Search"
+          />
+          <button className={`filter-btn ${showFilters || activeFilters ? "on" : ""}`} onClick={() => setShowFilters(!showFilters)} aria-expanded={showFilters}>
+            Filters{activeFilters > 0 && <span className="filter-n">{activeFilters}</span>}
           </button>
-        ))}
-      </nav>
-        <div className="view-toggle">
-          <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>▦ List</button>
-          <button className={view === "map" ? "on" : ""} onClick={() => setView("map")}>🗺️ Map</button>
+          <div className="view-toggle" role="group" aria-label="View">
+            <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>List</button>
+            <button className={view === "map" ? "on" : ""} onClick={() => setView("map")}>Map</button>
+          </div>
         </div>
       </div>
 
-      <div className="filters">
-        <input
-          className="search"
-          placeholder="Search places, dishes, memories…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <select value={area} onChange={(e) => setArea(e.target.value)}>
-          <option value="">All areas</option>
-          {AREAS.map((a) => (
-            <option key={a}>{a}</option>
-          ))}
-        </select>
-        <select value={cuisine} onChange={(e) => setCuisine(e.target.value)}>
-          <option value="">All cuisines</option>
-          {cuisines.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-        <select value={by} onChange={(e) => setBy(e.target.value as "" | Partner)}>
-          <option value="">Added by anyone</option>
-          <option value="a">Added by {names.a}</option>
-          <option value="b">Added by {names.b}</option>
-        </select>
-        <select value={price} onChange={(e) => setPrice(Number(e.target.value))}>
-          <option value={0}>Any price</option>
-          {PRICE_SG.map((p, i) => (
-            <option key={p.s} value={i + 1}>{p.s} {p.d} ({p.h})</option>
-          ))}
-        </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-          <option value="newest">Newest added</option>
-          <option value="top">Highest rated</option>
-          <option value="recent">Most recently eaten</option>
-          <option value="debate">Biggest disagreement</option>
-        </select>
-      </div>
-      {usedTags.length > 0 && (
-        <div className="tag-filter">
-          {usedTags.map((t) => (
-            <button key={t} className={`tag-btn ${tag === t ? "on" : ""}`} onClick={() => setTag(tag === t ? "" : t)}>{tagLabel(t)}</button>
-          ))}
+      {showFilters && (
+        <div className="filters">
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort">
+            <option value="newest">Newest added</option>
+            <option value="top">Highest rated</option>
+            <option value="recent">Most recently eaten</option>
+            <option value="debate">Biggest disagreement</option>
+          </select>
+          <select value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area">
+            <option value="">All areas</option>
+            {AREAS.map((a) => (
+              <option key={a}>{a}</option>
+            ))}
+          </select>
+          <select value={cuisine} onChange={(e) => setCuisine(e.target.value)} aria-label="Cuisine">
+            <option value="">All cuisines</option>
+            {cuisines.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+          <select value={price} onChange={(e) => setPrice(Number(e.target.value))} aria-label="Price">
+            <option value={0}>Any price</option>
+            {PRICE_SG.map((p, i) => (
+              <option key={p.s} value={i + 1}>{p.s} {p.d} ({p.h})</option>
+            ))}
+          </select>
+          <select value={by} onChange={(e) => setBy(e.target.value as "" | Partner)} aria-label="Added by">
+            <option value="">Added by anyone</option>
+            <option value="a">Added by {names.a}</option>
+            <option value="b">Added by {names.b}</option>
+          </select>
+          {usedTags.length > 0 && (
+            <div className="tag-filter">
+              {usedTags.map((t) => (
+                <button key={t} className={`tag-btn ${tag === t ? "on" : ""}`} onClick={() => setTag(tag === t ? "" : t)}>{tagLabel(t)}</button>
+              ))}
+            </div>
+          )}
+          {activeFilters > 0 && <button className="link clear" onClick={clearFilters}>Clear filters</button>}
         </div>
+      )}
+      {!showFilters && sort !== "newest" && (
+        <p className="sort-note">Sorted by {{ top: "highest rated", recent: "most recently eaten", debate: "biggest disagreement", newest: "" }[sort]}</p>
       )}
 
       {view === "map" ? (
@@ -457,6 +493,8 @@ export default function FoodApp({
       {showSettings && (
         <SettingsModal
           settings={settings}
+          me={me}
+          onSwitch={() => { pickMe(other(me)); setShowSettings(false); }}
           onClose={() => setShowSettings(false)}
           onSave={async (s) => {
             try {
@@ -470,12 +508,11 @@ export default function FoodApp({
   );
 }
 
-function Stat({ n, label, emoji }: { n: number | string; label: string; emoji: string }) {
+function Stat({ n, label }: { n: number | string; label: string }) {
   return (
     <div className="stat">
-      <span className="stat-emoji">{emoji}</span>
-      <span className="stat-n">{n}</span>
-      <span className="stat-l">{label}</span>
+      <dd className="stat-n">{n}</dd>
+      <dt className="stat-l">{label}</dt>
     </div>
   );
 }
@@ -505,6 +542,9 @@ function Card({
   const visited = s.status === "visited";
   const bothWant = s.wants.a && s.wants.b;
   const [lb, setLb] = useState(false);
+  const chips = [...(s.tags ?? []).map((t) => ({ k: "t" + t, l: tagLabel(t), tag: true })), ...s.cuisine.map((c) => ({ k: c, l: c, tag: false }))];
+  const shownChips = chips.slice(0, 4);
+  const last = s.visitedOn && visited ? new Date(s.visitedOn).toLocaleDateString("en-SG", { day: "numeric", month: "short" }) : null;
   return (
     <article className={`card ${visited ? "visited" : "wish"} ${s.ourSpot ? "ours" : ""} ${s.photos?.length ? "has-photo" : ""}`} onClick={onOpen}>
       {!!s.photos?.length && (
@@ -514,39 +554,34 @@ function Card({
         </div>
       )}
       {lb && s.photos && <Lightbox photos={s.photos} start={0} onClose={() => setLb(false)} />}
-      <div className="card-top">
-        <span className={`pill ${visited ? "pill-v" : "pill-w"}`}>
-          {visited ? "been together" : "want to try"}
-        </span>
-        {s.ourSpot && <span className="pill pill-o">our spot ♥</span>}
-        {visited && score != null && (
-          <span className="score" title="our combined score">
-            {score}
-            <small>/10</small>
-            <em className="score-word">{scoreWord(score)}</em>
+      <div className="card-head">
+        <div className="card-title">
+          <span className={`status ${visited ? "v" : "w"}`}>
+            <i aria-hidden="true" />
+            {visited ? `been ${s.visits && s.visits > 1 ? `${s.visits}×` : "together"}` : bothWant ? "we both want this" : "want to try"}
+            {s.ourSpot && <em className="ours-mark">· our spot ♥</em>}
           </span>
+          <h3>{s.name}</h3>
+          <p className="meta">
+            {s.mrt ? s.mrt : s.area} · <span title={`${PRICE_SG[s.price - 1]?.d} per pax`}>{PRICE[s.price - 1]}</span>
+            {last && ` · last ${last}`}
+          </p>
+        </div>
+        {visited && score != null && (
+          <div className="score" title="our combined score">
+            <b>{score}</b>
+            <em className="score-word">{scoreWord(score)}</em>
+          </div>
         )}
       </div>
-      <h3>{s.name}</h3>
-      <p className="meta">
-        {s.mrt ? `🚇 ${s.mrt}` : s.area} · <span title={`${PRICE_SG[s.price - 1]?.d} per pax`}>{PRICE[s.price - 1]}</span>
-        {visited && ` · been ${s.visits ?? 1}×`}
-        {s.visitedOn && visited && ` · last ${new Date(s.visitedOn).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}`}
-      </p>
-      {(s.cuisine.length > 0 || !!s.tags?.length) && (
+
+      {shownChips.length > 0 && (
         <div className="chips">
-          {(s.tags ?? []).map((t) => (
-            <span key={"t" + t} className="chip tag">{tagLabel(t)}</span>
+          {shownChips.map((c) => (
+            <span key={c.k} className={`chip ${c.tag ? "tag" : ""}`}>{c.l}</span>
           ))}
-          {s.cuisine.map((c) => (
-            <span key={c} className="chip">{c}</span>
-          ))}
+          {chips.length > shownChips.length && <span className="chip more">+{chips.length - shownChips.length}</span>}
         </div>
-      )}
-      {plan && (
-        <button className="plan-badge" onClick={(e) => { e.stopPropagation(); onPlan(plan); }}>
-          📅 {new Date(plan.on + "T00:00:00").toLocaleDateString("en-SG", { weekday: "short", day: "numeric", month: "short" })}{plan.at ? `, ${fmtTime(plan.at)}` : ""}
-        </button>
       )}
 
       {visited && (s.ratings.a != null || s.ratings.b != null) && (
@@ -554,16 +589,17 @@ function Card({
           {(["a", "b"] as const).map((p) => (
             <div key={p} className={`duo-p ${p}`}>
               <span className="duo-name">{names[p]}</span>
+              <span className="duo-bar"><i style={{ width: `${(s.ratings[p] ?? 0) * 10}%` }} /></span>
               <span className="duo-score">{s.ratings[p] ?? "–"}</span>
             </div>
           ))}
         </div>
       )}
 
-      {!!s.orders?.length && <OrderChips orders={s.orders} />}
+      {!!s.orders?.length && <OrderChips orders={s.orders} max={3} />}
       {s.dishes && (
         <p className="dishes">
-          <b>Must order:</b> {s.dishes}
+          <b>Must order</b> {s.dishes}
         </p>
       )}
       {(s.notes.a || s.notes.b) && (
@@ -572,42 +608,43 @@ function Card({
             (p) =>
               s.notes[p] && (
                 <p key={p} className={`note ${p}`}>
-                  <b>{names[p]}:</b> “{s.notes[p]}”
+                  <b>{names[p]}</b> {s.notes[p]}
                 </p>
               )
           )}
         </div>
       )}
-      {s.memory && <p className="memory">💌 {s.memory}</p>}
+      {s.memory && <p className="memory">“{s.memory}”</p>}
 
-      <div className="card-foot">
-        <span className={`by ${s.addedBy}`}>added by {names[s.addedBy]}</span>
-        {!visited && (
-          <div className="foot-actions" onClick={(e) => e.stopPropagation()}>
+      {plan && (
+        <button className="plan-badge" onClick={(e) => { e.stopPropagation(); onPlan(plan); }}>
+          📅 {new Date(plan.on + "T00:00:00").toLocaleDateString("en-SG", { weekday: "short", day: "numeric", month: "short" })}{plan.at ? `, ${fmtTime(plan.at)}` : ""}
+        </button>
+      )}
+
+      <div className="card-foot" onClick={(e) => e.stopPropagation()}>
+        <span className={`by ${s.addedBy}`}>{names[s.addedBy]}'s pick</span>
+        <div className="foot-actions">
+          {!visited && (
             <button
               className={`want ${s.wants[me] ? "on" : ""}`}
               onClick={onWant}
+              aria-pressed={!!s.wants[me]}
               title={s.wants[me] ? "un-want" : "I want to go too"}
             >
-              {bothWant ? "💞 both" : s.wants[me] ? "❤️ me" : "🤍 me too"}
+              {s.wants[me] ? "♥" : "♡"} {bothWant ? "both" : s.wants[me] ? "me" : "me too"}
             </button>
-            {!plan && <button className="want" onClick={() => onPlan()} title="Plan a date here">📅</button>}
-            <button className="went" onClick={onWent}>We went! →</button>
-          </div>
-        )}
-        {visited && !plan && (
-          <button className="want visit-btn plan-btn" onClick={(e) => { e.stopPropagation(); onPlan(); }} title="Plan a date here">📅</button>
-        )}
-        {visited && (
-          <button className="want visit-btn" onClick={(e) => { e.stopPropagation(); onVisit(); }} title="We went again today">
-            +1 visit
-          </button>
-        )}
-        {s.mapsUrl && visited && (
-          <a href={s.mapsUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="map">
-            📍 map
-          </a>
-        )}
+          )}
+          {!plan && <button className="want icon" onClick={() => onPlan()} title="Plan a date here" aria-label="Plan a date here">📅</button>}
+          {s.mapsUrl && (
+            <a href={s.mapsUrl} target="_blank" rel="noreferrer" className="want icon" title="Open in maps" aria-label="Open in maps">📍</a>
+          )}
+          {visited ? (
+            <button className="want" onClick={onVisit} title="We went again today">+1 visit</button>
+          ) : (
+            <button className="went" onClick={onWent}>We went!</button>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -615,10 +652,14 @@ function Card({
 
 function SettingsModal({
   settings,
+  me,
+  onSwitch,
   onClose,
   onSave,
 }: {
   settings: Settings;
+  me: Partner;
+  onSwitch: () => void;
   onClose: () => void;
   onSave: (s: Settings) => void;
 }) {
@@ -637,6 +678,10 @@ function SettingsModal({
         }}
       >
         <h2>About us</h2>
+        <p className="whoami">
+          This phone is <b className={me}>{settings.names[me]}</b>'s.{" "}
+          <button type="button" className="link" onClick={onSwitch}>I'm {settings.names[other(me)]} actually</button>
+        </p>
         <label>
           Partner one
           <input value={a} onChange={(e) => setA(e.target.value)} maxLength={30} />
