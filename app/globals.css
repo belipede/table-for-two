@@ -3,7 +3,7 @@
   --bg: #fbf3ea;
   --paper: #fffaf4;
   --ink: #3a2a25;
-  --muted: #8a756c;
+  --muted: #7a655c;
   --line: #ecdccd;
   --a: #e2572f;      /* partner one: tomato */
   --a-soft: #fde4da;
@@ -336,7 +336,7 @@ a { color: inherit; }
 @media (max-width: 640px) { .sgmap-canvas { height: 68vh; } }
 
 /* ---------- Map styling: calm and realistic, after the reference site ---------- */
-.sgmap { --m-land: #F3EEE2; --m-water: #DEE5E3; --m-park: #E6EAD9; --m-road: #FFFDF8; --m-ink: #141414; --m-muted: #6F6A60; --m-line: #E9E2D3; --m-surface: #FFFDF8; --m-accent: var(--b);
+.sgmap { --m-land: #F3EEE2; --m-water: #DEE5E3; --m-park: #E6EAD9; --m-road: #FFFDF8; --m-ink: #141414; --m-muted: #6F6A60; --m-line: #E9E2D3; --m-surface: #FFFDF8; --m-accent: #3b8460;
   --m-shadow: 0 8px 28px rgba(20, 20, 20, 0.12); --m-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--m-water); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
 .ref-map { background: #DEE5E3 !important; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -603,3 +603,61 @@ html[data-theme="dark"] .status.w { color: #e9b04f; }
 html[data-theme="dark"] .chip.more { background: transparent; }
 html[data-theme="dark"] .went { background: var(--ink); color: var(--bg); }
 html[data-theme="dark"] .tabs button.on, html[data-theme="dark"] .view-toggle button.on { background: #3d332b; }
+
+/* ---------- polish pass (2026-11) ---------- */
+/* keyboard focus that matches the warm palette */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+.search:focus-visible, .modal input:focus-visible, .modal select:focus-visible, .modal textarea:focus-visible, .filters select:focus-visible { outline: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* want-to-try reads as the same family as "been": ring vs dot, like the map */
+.status.w { color: var(--muted); }
+.status.w i { border-color: var(--green); }
+.status .ours-mark { margin-left: -2px; }
+
+/* critic line sits as a caption under the stats, not a stray sentence */
+.picky { font-size: 12.5px; margin: -8px 0 0; padding-left: 4px; }
+.picky b { color: var(--ink); }
+
+/* quieter numbers in tabs; clearer active state */
+.tab-n { font-variant-numeric: tabular-nums; }
+.tabs button.on .tab-n { color: var(--ink); opacity: .55; }
+
+/* cards: tighter rhythm, tidy score column */
+.card { gap: 9px; }
+.score { min-width: 56px; }
+.chip { line-height: 1.35; }
+.chip.tag { font-weight: 600; }
+.card-foot { min-height: 46px; }
+
+/* desktop: quick links share the row evenly under the tonight card */
+@media (min-width: 900px) {
+  .quick-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .quick-row button { justify-content: center; display: inline-flex; gap: 6px; align-items: center; }
+}
+
+/* phone: compact header, no sideways-scrolling shortcuts */
+@media (max-width: 640px) {
+  .hero { gap: 12px; }
+  .hero h1 { font-size: 30px; }
+  .tagline { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tagline .tag-intro { display: none; }
+  .brand { min-width: 0; }
+  .brand > div:last-child { min-width: 0; }
+  .icon-btn { width: 38px; height: 38px; border-radius: 11px; font-size: 16px; }
+  .stats { padding: 10px 2px; }
+  .tonight { padding: 10px 14px 10px 10px; gap: 12px; }
+  .tonight-die { width: 42px; height: 42px; font-size: 22px; border-radius: 12px; }
+  .tonight-txt b { font-size: 17.5px; }
+  .quick-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: -2px 0 0; padding: 0; overflow: visible; }
+  .quick-row button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 4px 8px; border-radius: 14px; background: var(--paper); font-size: 12.5px; white-space: nowrap; }
+  .quick-row .qi { font-size: 18px; line-height: 1; }
+  .toolbar { margin-top: 2px; }
+  .card { padding: 14px 14px 10px; }
+  .card h3 { font-size: 20px; }
+  .score b { font-size: 28px; }
+}
+html[data-theme="dark"] .status.w { color: var(--muted); }
+html[data-theme="dark"] .sgmap { --m-accent: #6cc08f; }

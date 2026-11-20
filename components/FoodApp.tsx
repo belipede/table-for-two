@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { AREAS, PRICE, avgScore, type Partner, type Plan, type Settings, type Spot } from "@/lib/types";
 import SpotForm from "./SpotForm";
@@ -42,6 +42,16 @@ export default function FoodApp({
   const [spin, setSpin] = useState<Spot | null | "none">(null);
   const [showSettings, setShowSettings] = useState(false);
   const [view, setView] = useState<"list" | "map">("list");
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  // Switching to the map on a phone: bring the map up under the sticky tabs instead of leaving it below the fold.
+  const showMap = () => {
+    setView("map");
+    const el = toolbarRef.current;
+    if (el && window.innerWidth < 900) {
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      if (window.scrollY < top) requestAnimationFrame(() => window.scrollTo({ top, behavior: "smooth" }));
+    }
+  };
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planEdit, setPlanEdit] = useState<Partial<Plan> | null>(null);
   const [showYear, setShowYear] = useState(false);
@@ -253,7 +263,8 @@ export default function FoodApp({
                 <span className="pa">{names.a}</span> <span className="amp">&amp;</span> <span className="pb">{names.b}</span>
               </h1>
               <p className="tagline">
-                a table for two{daysTogether != null && <> · {daysTogether.toLocaleString()} days of makan together</>}
+                <span className="tag-intro">a table for two{daysTogether != null && " · "}</span>
+                {daysTogether != null && <>{daysTogether.toLocaleString()} days of makan together</>}
               </p>
             </div>
           </div>
@@ -289,9 +300,9 @@ export default function FoodApp({
           <span className="tonight-go" aria-hidden="true">→</span>
         </button>
         <div className="quick-row">
-          <button onClick={() => setPlanEdit({})}>📅 Plan a date</button>
-          <button onClick={() => setShowTrails(true)}>🏆 Makan trails</button>
-          <button onClick={() => setShowYear(true)}>✨ Our year</button>
+          <button onClick={() => setPlanEdit({})}><span className="qi" aria-hidden="true">📅</span> Plan a date</button>
+          <button onClick={() => setShowTrails(true)}><span className="qi" aria-hidden="true">🏆</span> Makan trails</button>
+          <button onClick={() => setShowYear(true)}><span className="qi" aria-hidden="true">✨</span> Our year</button>
         </div>
       </header>
 
@@ -308,7 +319,7 @@ export default function FoodApp({
         onWent={(s, p) => setEditing({ spot: { ...s, visitedOn: p.on, ...(s.status === "visited" ? { visits: (s.visits ?? 1) + 1, visitLog: [...(s.visitLog ?? (s.visitedOn ? [s.visitedOn] : [])), p.on] } : {}) }, markVisited: true, planId: p.id })}
       />
 
-      <div className="toolbar">
+      <div className="toolbar" ref={toolbarRef}>
         <nav className="tabs" aria-label="Which spots">
           {(
             [
@@ -327,7 +338,7 @@ export default function FoodApp({
           <input
             className="search"
             type="search"
-            placeholder="Search spots, dishes…"
+            placeholder="Search spots"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             aria-label="Search"
@@ -337,7 +348,7 @@ export default function FoodApp({
           </button>
           <div className="view-toggle" role="group" aria-label="View">
             <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>List</button>
-            <button className={view === "map" ? "on" : ""} onClick={() => setView("map")}>Map</button>
+            <button className={view === "map" ? "on" : ""} onClick={() => showMap()}>Map</button>
           </div>
         </div>
       </div>
@@ -542,7 +553,11 @@ function Card({
   const visited = s.status === "visited";
   const bothWant = s.wants.a && s.wants.b;
   const [lb, setLb] = useState(false);
-  const chips = [...(s.tags ?? []).map((t) => ({ k: "t" + t, l: tagLabel(t), tag: true })), ...s.cuisine.map((c) => ({ k: c, l: c, tag: false }))];
+  const tagSet = new Set((s.tags ?? []).map((t) => t.toLowerCase()));
+  const chips = [
+    ...(s.tags ?? []).map((t) => ({ k: "t" + t, l: tagLabel(t), tag: true })),
+    ...s.cuisine.filter((c) => !tagSet.has(c.toLowerCase())).map((c) => ({ k: c, l: c, tag: false })),
+  ];
   const shownChips = chips.slice(0, 4);
   const last = s.visitedOn && visited ? new Date(s.visitedOn).toLocaleDateString("en-SG", { day: "numeric", month: "short" }) : null;
   return (
