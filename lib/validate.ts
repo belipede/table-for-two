@@ -46,7 +46,7 @@ export function cleanSpot(input: any, prev?: Spot): Spot | string {
     id: prev?.id ?? crypto.randomUUID(),
     createdAt: prev?.createdAt ?? now,
     updatedAt: now,
-    addedBy: prev?.addedBy ?? partner(input?.addedBy),
+    addedBy: input?.addedBy === "a" || input?.addedBy === "b" ? input.addedBy : prev?.addedBy ?? "a",
     name,
     area: str(input?.area, 40) ?? "Central",
     mrt: typeof input?.mrt === "string" && STATION_BY_NAME[input.mrt] ? input.mrt : undefined,

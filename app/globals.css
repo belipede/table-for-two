@@ -204,6 +204,8 @@ a { color: inherit; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; background: #f3e6d9; border-radius: 999px; padding: 4px; }
 .seg button { border: none; background: transparent; border-radius: 999px; padding: 8px; font-weight: 600; color: var(--muted); }
 .seg button.on { background: var(--paper); color: var(--ink); box-shadow: var(--shadow); }
+.pick-field { display: grid; gap: 6px; }
+.pick-field .lbl { font-size: 13px; font-weight: 600; color: var(--muted); }
 .price { display: flex; gap: 4px; }
 .price button { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 0; font-weight: 700; color: var(--muted); font-size: 13px; }
 .price button.on { background: var(--gold); border-color: var(--gold); color: #fff; }
